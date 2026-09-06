@@ -45,7 +45,7 @@ export default function GeographicReach() {
           ) : (
             <>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>{selected.name}</h2>
+                <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1, minWidth: 0, overflowWrap: 'break-word' }}>{selected.name}</h2>
                 <span
                   style={{
                     fontSize: 11,
@@ -152,7 +152,7 @@ export default function GeographicReach() {
                   flexShrink: 0,
                 }}
               />
-              <div style={{ flex: 1, fontSize: 14 }}>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 14, overflowWrap: 'break-word' }}>
                 {b.name}
                 {b.isMainChurch && (
                   <span
