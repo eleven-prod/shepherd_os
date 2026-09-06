@@ -162,12 +162,13 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
   const { role } = useAuth()
   const isAdmin = ADMIN_ROLES.includes(role)
 
+  const LG_HETERO_DEMOGRAPHICS = [...DEMOGRAPHICS, ['Hetero', 'Hetero']]
   const LG_CATEGORIES = [
-    ['lgAttendance', 'Life Group Attendance'],
-    ['lgFirstTimers', 'Life Group First Timers'],
+    ['lgAttendance', 'Life Group Attendance', DEMOGRAPHICS],
+    ['lgFirstTimers', 'Life Group First Timers', DEMOGRAPHICS],
+    ['lgNumberOfGroups', 'Number of Life Groups', LG_HETERO_DEMOGRAPHICS],
   ]
-  const LG_SIMPLE_FIELDS = [['lgNumberOfGroups', 'Number of Life Groups']]
-  const LG_FIELD_KEYS = [...LG_CATEGORIES.flatMap(([prefix]) => DEMOGRAPHICS.map(([dKey]) => `${prefix}${dKey}`)), ...LG_SIMPLE_FIELDS.map(([key]) => key)]
+  const LG_FIELD_KEYS = LG_CATEGORIES.flatMap(([prefix, , demographics]) => demographics.map(([dKey]) => `${prefix}${dKey}`))
 
   const [selectedWeek, setSelectedWeek] = useState(weeks.find((w) => isWithinDeadline(w)) || weeks[weeks.length - 1])
   const [form, setForm] = useState(Object.fromEntries(LG_FIELD_KEYS.map((key) => [key, ''])))
@@ -289,13 +290,13 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, opacity: locked ? 0.5 : 1 }}>
-            {LG_CATEGORIES.map(([prefix, label]) => {
-              const categoryTotal = DEMOGRAPHICS.reduce((sum, [dKey]) => sum + (Number(form[`${prefix}${dKey}`]) || 0), 0)
+            {LG_CATEGORIES.map(([prefix, label, demographics]) => {
+              const categoryTotal = demographics.reduce((sum, [dKey]) => sum + (Number(form[`${prefix}${dKey}`]) || 0), 0)
               return (
                 <div key={prefix}>
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{label}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
-                    {DEMOGRAPHICS.map(([dKey, dLabel]) => (
+                    {demographics.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ flex: 1, fontSize: 13 }}>{dLabel}</div>
                         <input
@@ -317,21 +318,6 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                 </div>
               )
             })}
-
-            {LG_SIMPLE_FIELDS.map(([key, label]) => (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{label}</div>
-                <input
-                  type="number"
-                  step={1}
-                  value={form[key]}
-                  onChange={set(key)}
-                  disabled={locked}
-                  style={{ ...sheetInputStyle, width: 110 }}
-                  placeholder="0"
-                />
-              </div>
-            ))}
           </div>
 
           {error && <div style={{ color: 'var(--status-critical)', fontSize: 13, marginTop: 10 }}>{error}</div>}
@@ -380,14 +366,14 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {LG_CATEGORIES.map(([prefix, label]) => (
+                  {LG_CATEGORIES.map(([prefix, label, demographics]) => (
                     <Fragment key={prefix}>
                       <tr style={{ borderTop: '2px solid var(--line)' }}>
                         <td colSpan={weeks.length + 2} style={{ padding: '8px 8px 4px', fontWeight: 700, fontSize: 12.5 }}>
                           {label}
                         </td>
                       </tr>
-                      {DEMOGRAPHICS.map(([dKey, dLabel]) => {
+                      {demographics.map(([dKey, dLabel]) => {
                         const fieldKey = `${prefix}${dKey}`
                         return (
                           <tr key={fieldKey} style={{ borderTop: '1px solid var(--line)' }}>
@@ -407,7 +393,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                       <tr style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-muted)' }}>
                         <td style={{ padding: '6px 8px', fontWeight: 700 }}>Total</td>
                         {weeks.map((w) => {
-                          const weekEntries = entries.filter((e) => e.week_start === w && DEMOGRAPHICS.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
+                          const weekEntries = entries.filter((e) => e.week_start === w && demographics.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
                           const weekTotal = weekEntries.reduce((sum, e) => sum + Number(e.value), 0)
                           return (
                             <td key={w} style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
@@ -416,24 +402,10 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                           )
                         })}
                         <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
-                          {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
+                          {demographics.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
                         </td>
                       </tr>
                     </Fragment>
-                  ))}
-                  {LG_SIMPLE_FIELDS.map(([key, label]) => (
-                    <tr key={key} style={{ borderTop: '2px solid var(--line)' }}>
-                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>{label}</td>
-                      {weeks.map((w) => {
-                        const entry = entries.find((e) => e.field_key === key && e.week_start === w)
-                        return (
-                          <td key={w} style={{ padding: '6px 8px', textAlign: 'right' }}>
-                            {entry ? entry.value : '—'}
-                          </td>
-                        )
-                      })}
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{totals[key]}</td>
-                    </tr>
                   ))}
                 </tbody>
               </table>
