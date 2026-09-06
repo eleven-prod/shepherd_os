@@ -63,7 +63,7 @@ function KpiCard({ kpi }) {
   return (
     <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex' }}>
-        <div style={{ flex: 1, fontWeight: 700, fontSize: 14 }}>{kpi.name}</div>
+        <div style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 14, overflowWrap: 'break-word' }}>{kpi.name}</div>
         <StatusBadge status={kpi.status} compact />
       </div>
 
