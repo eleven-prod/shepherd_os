@@ -276,10 +276,11 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
         })}
       </div>
 
-      <div className="two-col">
-        <div>
-          {locked && (
-            <div style={{ background: 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 18px', marginBottom: 12 }}>
+      <div className="mobile-scroll-pane">
+        <div className="two-col">
+          <div>
+            {locked && (
+              <div style={{ background: 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 18px', marginBottom: 12 }}>
               <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <LockIcon size={14} /> This week is locked
               </div>
@@ -411,6 +412,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
               </table>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
@@ -597,10 +599,11 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
         })}
       </div>
 
-      <div className="two-col">
-        {/* --- Weekly entry form --- */}
-        <div>
-          {locked ? (
+      <div className="mobile-scroll-pane">
+        <div className="two-col">
+          {/* --- Weekly entry form --- */}
+          <div>
+            {locked ? (
             <div
               style={{
                 background: 'var(--surface-muted)',
@@ -777,6 +780,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
               </table>
             </div>
           )}
+        </div>
         </div>
       </div>
     </div>
