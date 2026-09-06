@@ -740,6 +740,18 @@ const FIELD_TABLE_MAP = {
   firstTimersYoungAdult: { table: 'area_people_stats', column: 'first_timers_young_adult_actual', matchColumn: 'area_name' },
   firstTimersKKB: { table: 'area_people_stats', column: 'first_timers_kkb_actual', matchColumn: 'area_name' },
   firstTimersChildren: { table: 'area_people_stats', column: 'first_timers_children_actual', matchColumn: 'area_name' },
+
+  lgAttendanceMen: { table: 'life_groups', column: 'lg_attendance_men_actual', matchColumn: 'name' },
+  lgAttendanceWomen: { table: 'life_groups', column: 'lg_attendance_women_actual', matchColumn: 'name' },
+  lgAttendanceYoungAdult: { table: 'life_groups', column: 'lg_attendance_young_adult_actual', matchColumn: 'name' },
+  lgAttendanceKKB: { table: 'life_groups', column: 'lg_attendance_kkb_actual', matchColumn: 'name' },
+  lgAttendanceChildren: { table: 'life_groups', column: 'lg_attendance_children_actual', matchColumn: 'name' },
+
+  lgFirstTimersMen: { table: 'life_groups', column: 'lg_first_timers_men_actual', matchColumn: 'name' },
+  lgFirstTimersWomen: { table: 'life_groups', column: 'lg_first_timers_women_actual', matchColumn: 'name' },
+  lgFirstTimersYoungAdult: { table: 'life_groups', column: 'lg_first_timers_young_adult_actual', matchColumn: 'name' },
+  lgFirstTimersKKB: { table: 'life_groups', column: 'lg_first_timers_kkb_actual', matchColumn: 'name' },
+  lgFirstTimersChildren: { table: 'life_groups', column: 'lg_first_timers_children_actual', matchColumn: 'name' },
 }
 
 // Maps each demographic field to the parent total it rolls up into, and
@@ -771,6 +783,18 @@ const DEMOGRAPHIC_GROUPS = {
   firstTimersYoungAdult: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
   firstTimersKKB: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
   firstTimersChildren: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
+
+  lgAttendanceMen: { siblings: ['lgAttendanceMen', 'lgAttendanceWomen', 'lgAttendanceYoungAdult', 'lgAttendanceKKB', 'lgAttendanceChildren'], parentColumn: 'attendance_actual' },
+  lgAttendanceWomen: { siblings: ['lgAttendanceMen', 'lgAttendanceWomen', 'lgAttendanceYoungAdult', 'lgAttendanceKKB', 'lgAttendanceChildren'], parentColumn: 'attendance_actual' },
+  lgAttendanceYoungAdult: { siblings: ['lgAttendanceMen', 'lgAttendanceWomen', 'lgAttendanceYoungAdult', 'lgAttendanceKKB', 'lgAttendanceChildren'], parentColumn: 'attendance_actual' },
+  lgAttendanceKKB: { siblings: ['lgAttendanceMen', 'lgAttendanceWomen', 'lgAttendanceYoungAdult', 'lgAttendanceKKB', 'lgAttendanceChildren'], parentColumn: 'attendance_actual' },
+  lgAttendanceChildren: { siblings: ['lgAttendanceMen', 'lgAttendanceWomen', 'lgAttendanceYoungAdult', 'lgAttendanceKKB', 'lgAttendanceChildren'], parentColumn: 'attendance_actual' },
+
+  lgFirstTimersMen: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
+  lgFirstTimersWomen: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
+  lgFirstTimersYoungAdult: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
+  lgFirstTimersKKB: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
+  lgFirstTimersChildren: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
 }
 
 // Category 1 and Category 2 are church-wide totals (org_stats.total_members
@@ -883,10 +907,16 @@ export async function recomputeMonthlyActual(areaName, fieldKey, monthStart) {
   const group = DEMOGRAPHIC_GROUPS[fieldKey]
   if (group) {
     const siblingColumns = group.siblings.map((key) => FIELD_TABLE_MAP[key].column)
-    const { data: row, error: readErr } = await supabase.from('area_people_stats').select(siblingColumns.join(', ')).eq('area_name', areaName).single()
+    // Table and match column come from the group's own field mapping —
+    // area_people_stats/area_name for Attendance/First Timers,
+    // life_groups/name for Life Group Attendance/First Timers — rather
+    // than being hardcoded to one table, since these demographics now
+    // span two different tables.
+    const { table: groupTable, matchColumn: groupMatchColumn } = mapping
+    const { data: row, error: readErr } = await supabase.from(groupTable).select(siblingColumns.join(', ')).eq(groupMatchColumn, areaName).single()
     if (readErr) throw new Error(readErr.message)
     const parentTotal = siblingColumns.reduce((sum, col) => sum + Number(row[col]), 0)
-    const { error: writeErr } = await supabase.from('area_people_stats').update({ [group.parentColumn]: parentTotal }).eq('area_name', areaName)
+    const { error: writeErr } = await supabase.from(groupTable).update({ [group.parentColumn]: parentTotal }).eq(groupMatchColumn, areaName)
     if (writeErr) throw new Error(writeErr.message)
 
     // Category 1 (membership_actual) and Category 2 (active_membership_actual)
