@@ -102,7 +102,7 @@ export default function ParentSubsetPanel({
               </div>
             )}
             {c.demographics && (
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
                 {[
                   ['Men', c.demographics.men],
                   ['Women', c.demographics.women],
@@ -110,9 +110,11 @@ export default function ParentSubsetPanel({
                   ['KKB', c.demographics.kkb],
                   ['Children', c.demographics.children],
                 ].map(([dLabel, dValue]) => (
-                  <div key={dLabel} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
-                    <span className="body-muted">{dLabel}</span>
-                    <span style={{ fontWeight: 700 }}>{formatter(dValue)}</span>
+                  <div key={dLabel} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11.5, minWidth: 0 }}>
+                    <span className="body-muted" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {dLabel}
+                    </span>
+                    <span style={{ fontWeight: 700, flexShrink: 0 }}>{formatter(dValue)}</span>
                   </div>
                 ))}
               </div>
