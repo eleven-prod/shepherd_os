@@ -1,20 +1,24 @@
 import { LockIcon } from '../components/Icons'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import SectionHeader from '../components/SectionHeader'
 import { sheetInputStyle } from '../components/FormSheet'
 import { useAppData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRecentSubmissions } from '../data/api'
 
-// 4 categories get a full demographic breakdown (Men/Women/Young Adult/
+// 2 categories get a full demographic breakdown (Men/Women/Young Adult/
 // KKB/Children) instead of one flat number — each demographic is its
-// own weekly-entry field (e.g. cat1Men, attendanceWomen), and the
-// category's own Total is auto-computed as the sum of its 5
-// demographics, both here for the current week and, via
-// recomputeMonthlyActual, for the resulting monthly figure.
+// own weekly-entry field (e.g. attendanceMen), and the category's own
+// Total is auto-computed as the sum of its 5 demographics, both here
+// for the current week and, via recomputeMonthlyActual, for the
+// resulting monthly figure.
+//
+// Category 1/2 are deliberately NOT here — they're static membership
+// counts (a snapshot), not a weekly flow metric like Attendance. Summing
+// several weeks of "Category 1 Men" would incorrectly inflate what
+// should be a single current count, unlike Attendance where multiple
+// weeks legitimately do add up to a monthly total.
 const DEMOGRAPHIC_CATEGORIES = [
-  ['cat1', 'Category 1 ( SSAM+LGAM+ SSAM/LGAM)'],
-  ['cat2', 'Category 2 ( SSAM+ SSAM/LGAM)'],
   ['attendance', 'Sunday Service Attendance'],
   ['firstTimers', 'Total No. of First Timers ( Sunday Service)'],
 ]
@@ -372,7 +376,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                      <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Total Membership</div>
+                      <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Total</div>
                       <div style={{ width: 110, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
@@ -447,22 +451,47 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                 </thead>
                 <tbody>
                   {DEMOGRAPHIC_CATEGORIES.map(([prefix, label]) => (
-                    <tr key={prefix} style={{ borderTop: '1px solid var(--line)' }}>
-                      <td style={{ padding: '6px 8px' }}>{label} — Total</td>
-                      {weeks.map((w) => {
-                        const weekEntries = entries.filter((e) => e.week_start === w && DEMOGRAPHICS.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
-                        const weekTotal = weekEntries.reduce((sum, e) => sum + Number(e.value), 0)
-                        const title = weekEntries.length > 0 ? `${weekEntries.length} of 5 demographics entered` : undefined
+                    <Fragment key={prefix}>
+                      <tr key={`${prefix}-header`} style={{ borderTop: '2px solid var(--line)' }}>
+                        <td colSpan={weeks.length + 2} style={{ padding: '8px 8px 4px', fontWeight: 700, fontSize: 12.5 }}>
+                          {label}
+                        </td>
+                      </tr>
+                      {DEMOGRAPHICS.map(([dKey, dLabel]) => {
+                        const fieldKey = `${prefix}${dKey}`
                         return (
-                          <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', cursor: weekEntries.length > 0 ? 'help' : 'default' }}>
-                            {weekEntries.length > 0 ? weekTotal : '—'}
-                          </td>
+                          <tr key={fieldKey} style={{ borderTop: '1px solid var(--line)' }}>
+                            <td style={{ padding: '6px 8px 6px 18px' }}>{dLabel}</td>
+                            {weeks.map((w) => {
+                              const entry = entries.find((e) => e.field_key === fieldKey && e.week_start === w)
+                              const title = entry ? `${entry.submitted_by_name || 'Unknown'} — ${new Date(entry.updated_at).toLocaleString()}` : undefined
+                              return (
+                                <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
+                                  {entry ? entry.value : '—'}
+                                </td>
+                              )
+                            })}
+                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
+                          </tr>
                         )
                       })}
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
-                        {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
-                      </td>
-                    </tr>
+                      <tr key={`${prefix}-total`} style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-muted)' }}>
+                        <td style={{ padding: '6px 8px', fontWeight: 700 }}>Total</td>
+                        {weeks.map((w) => {
+                          const weekEntries = entries.filter((e) => e.week_start === w && DEMOGRAPHICS.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
+                          const weekTotal = weekEntries.reduce((sum, e) => sum + Number(e.value), 0)
+                          const title = weekEntries.length > 0 ? `${weekEntries.length} of 5 demographics entered` : undefined
+                          return (
+                            <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, cursor: weekEntries.length > 0 ? 'help' : 'default' }}>
+                              {weekEntries.length > 0 ? weekTotal : '—'}
+                            </td>
+                          )
+                        })}
+                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
+                          {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
+                        </td>
+                      </tr>
+                    </Fragment>
                   ))}
                   {SIMPLE_FIELDS.map(([key, label]) => (
                     <tr key={key} style={{ borderTop: '1px solid var(--line)' }}>
