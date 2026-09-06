@@ -147,6 +147,16 @@ function hydrateAreaPeopleStats(row) {
     totalWorkers: Number(row.total_workers ?? 0),
     numberOfTithersTarget: Number(row.number_of_tithers_target ?? 0),
     numberOfTithersActual: Number(row.number_of_tithers_actual ?? 0),
+    cat1Men: Number(row.cat1_men_actual ?? 0),
+    cat1Women: Number(row.cat1_women_actual ?? 0),
+    cat1YoungAdult: Number(row.cat1_young_adult_actual ?? 0),
+    cat1KKB: Number(row.cat1_kkb_actual ?? 0),
+    cat1Children: Number(row.cat1_children_actual ?? 0),
+    cat2Men: Number(row.cat2_men_actual ?? 0),
+    cat2Women: Number(row.cat2_women_actual ?? 0),
+    cat2YoungAdult: Number(row.cat2_young_adult_actual ?? 0),
+    cat2KKB: Number(row.cat2_kkb_actual ?? 0),
+    cat2Children: Number(row.cat2_children_actual ?? 0),
   }
 }
 
@@ -261,6 +271,23 @@ export async function fetchAppData() {
     firstTimersKpi: byName['First Timers'],
     firstTimerFunnel: funnelRes.data.map((f) => ({ label: f.label, count: f.count })),
     areaPeopleStats,
+    // Church-wide demographic breakdowns for Category 1/2 — summed
+    // across every area, since Membership shows church-wide totals
+    // while Data Entry tracks these per-church.
+    cat1Demographics: {
+      men: areaPeopleStats.reduce((s, a) => s + a.cat1Men, 0),
+      women: areaPeopleStats.reduce((s, a) => s + a.cat1Women, 0),
+      youngAdult: areaPeopleStats.reduce((s, a) => s + a.cat1YoungAdult, 0),
+      kkb: areaPeopleStats.reduce((s, a) => s + a.cat1KKB, 0),
+      children: areaPeopleStats.reduce((s, a) => s + a.cat1Children, 0),
+    },
+    cat2Demographics: {
+      men: areaPeopleStats.reduce((s, a) => s + a.cat2Men, 0),
+      women: areaPeopleStats.reduce((s, a) => s + a.cat2Women, 0),
+      youngAdult: areaPeopleStats.reduce((s, a) => s + a.cat2YoungAdult, 0),
+      kkb: areaPeopleStats.reduce((s, a) => s + a.cat2KKB, 0),
+      children: areaPeopleStats.reduce((s, a) => s + a.cat2Children, 0),
+    },
 
     // Life Groups
     lifeGroups,
@@ -684,6 +711,80 @@ const FIELD_TABLE_MAP = {
   support: { table: 'area_financial_stats', column: 'support_actual', matchColumn: 'area_name' },
   lgAttendance: { table: 'life_groups', column: 'attendance_actual', matchColumn: 'name' },
   lgFirstTimers: { table: 'life_groups', column: 'first_timers_actual', matchColumn: 'name' },
+
+  // Demographic breakdowns — each of these 20 feeds its own column, and
+  // additionally rolls up into one of the 4 parent totals above (see
+  // DEMOGRAPHIC_GROUPS below), which in turn is what area_people_stats'
+  // existing columns (membership_actual, active_membership_actual,
+  // attendance_actual, first_timers_actual) now represent going forward.
+  cat1Men: { table: 'area_people_stats', column: 'cat1_men_actual', matchColumn: 'area_name' },
+  cat1Women: { table: 'area_people_stats', column: 'cat1_women_actual', matchColumn: 'area_name' },
+  cat1YoungAdult: { table: 'area_people_stats', column: 'cat1_young_adult_actual', matchColumn: 'area_name' },
+  cat1KKB: { table: 'area_people_stats', column: 'cat1_kkb_actual', matchColumn: 'area_name' },
+  cat1Children: { table: 'area_people_stats', column: 'cat1_children_actual', matchColumn: 'area_name' },
+
+  cat2Men: { table: 'area_people_stats', column: 'cat2_men_actual', matchColumn: 'area_name' },
+  cat2Women: { table: 'area_people_stats', column: 'cat2_women_actual', matchColumn: 'area_name' },
+  cat2YoungAdult: { table: 'area_people_stats', column: 'cat2_young_adult_actual', matchColumn: 'area_name' },
+  cat2KKB: { table: 'area_people_stats', column: 'cat2_kkb_actual', matchColumn: 'area_name' },
+  cat2Children: { table: 'area_people_stats', column: 'cat2_children_actual', matchColumn: 'area_name' },
+
+  attendanceMen: { table: 'area_people_stats', column: 'attendance_men_actual', matchColumn: 'area_name' },
+  attendanceWomen: { table: 'area_people_stats', column: 'attendance_women_actual', matchColumn: 'area_name' },
+  attendanceYoungAdult: { table: 'area_people_stats', column: 'attendance_young_adult_actual', matchColumn: 'area_name' },
+  attendanceKKB: { table: 'area_people_stats', column: 'attendance_kkb_actual', matchColumn: 'area_name' },
+  attendanceChildren: { table: 'area_people_stats', column: 'attendance_children_actual', matchColumn: 'area_name' },
+
+  firstTimersMen: { table: 'area_people_stats', column: 'first_timers_men_actual', matchColumn: 'area_name' },
+  firstTimersWomen: { table: 'area_people_stats', column: 'first_timers_women_actual', matchColumn: 'area_name' },
+  firstTimersYoungAdult: { table: 'area_people_stats', column: 'first_timers_young_adult_actual', matchColumn: 'area_name' },
+  firstTimersKKB: { table: 'area_people_stats', column: 'first_timers_kkb_actual', matchColumn: 'area_name' },
+  firstTimersChildren: { table: 'area_people_stats', column: 'first_timers_children_actual', matchColumn: 'area_name' },
+}
+
+// Maps each demographic field to the parent total it rolls up into, and
+// the parent's own column — used so that after any one demographic's
+// monthly sum is recomputed, the parent total is recomputed too, as the
+// sum of ALL FIVE demographics' current actual values (not just the one
+// that just changed).
+const DEMOGRAPHIC_GROUPS = {
+  cat1Men: { siblings: ['cat1Men', 'cat1Women', 'cat1YoungAdult', 'cat1KKB', 'cat1Children'], parentColumn: 'membership_actual' },
+  cat1Women: { siblings: ['cat1Men', 'cat1Women', 'cat1YoungAdult', 'cat1KKB', 'cat1Children'], parentColumn: 'membership_actual' },
+  cat1YoungAdult: { siblings: ['cat1Men', 'cat1Women', 'cat1YoungAdult', 'cat1KKB', 'cat1Children'], parentColumn: 'membership_actual' },
+  cat1KKB: { siblings: ['cat1Men', 'cat1Women', 'cat1YoungAdult', 'cat1KKB', 'cat1Children'], parentColumn: 'membership_actual' },
+  cat1Children: { siblings: ['cat1Men', 'cat1Women', 'cat1YoungAdult', 'cat1KKB', 'cat1Children'], parentColumn: 'membership_actual' },
+
+  cat2Men: { siblings: ['cat2Men', 'cat2Women', 'cat2YoungAdult', 'cat2KKB', 'cat2Children'], parentColumn: 'active_membership_actual' },
+  cat2Women: { siblings: ['cat2Men', 'cat2Women', 'cat2YoungAdult', 'cat2KKB', 'cat2Children'], parentColumn: 'active_membership_actual' },
+  cat2YoungAdult: { siblings: ['cat2Men', 'cat2Women', 'cat2YoungAdult', 'cat2KKB', 'cat2Children'], parentColumn: 'active_membership_actual' },
+  cat2KKB: { siblings: ['cat2Men', 'cat2Women', 'cat2YoungAdult', 'cat2KKB', 'cat2Children'], parentColumn: 'active_membership_actual' },
+  cat2Children: { siblings: ['cat2Men', 'cat2Women', 'cat2YoungAdult', 'cat2KKB', 'cat2Children'], parentColumn: 'active_membership_actual' },
+
+  attendanceMen: { siblings: ['attendanceMen', 'attendanceWomen', 'attendanceYoungAdult', 'attendanceKKB', 'attendanceChildren'], parentColumn: 'attendance_actual' },
+  attendanceWomen: { siblings: ['attendanceMen', 'attendanceWomen', 'attendanceYoungAdult', 'attendanceKKB', 'attendanceChildren'], parentColumn: 'attendance_actual' },
+  attendanceYoungAdult: { siblings: ['attendanceMen', 'attendanceWomen', 'attendanceYoungAdult', 'attendanceKKB', 'attendanceChildren'], parentColumn: 'attendance_actual' },
+  attendanceKKB: { siblings: ['attendanceMen', 'attendanceWomen', 'attendanceYoungAdult', 'attendanceKKB', 'attendanceChildren'], parentColumn: 'attendance_actual' },
+  attendanceChildren: { siblings: ['attendanceMen', 'attendanceWomen', 'attendanceYoungAdult', 'attendanceKKB', 'attendanceChildren'], parentColumn: 'attendance_actual' },
+
+  firstTimersMen: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
+  firstTimersWomen: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
+  firstTimersYoungAdult: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
+  firstTimersKKB: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
+  firstTimersChildren: { siblings: ['firstTimersMen', 'firstTimersWomen', 'firstTimersYoungAdult', 'firstTimersKKB', 'firstTimersChildren'], parentColumn: 'first_timers_actual' },
+}
+
+// Category 1 and Category 2 are church-wide totals (org_stats.total_members
+// / active_members) — after any area's membership_actual or
+// active_membership_actual changes, this re-sums ACROSS EVERY AREA to
+// keep the church-wide figure in sync too, the same way it already
+// works for Total Giving across financial categories.
+async function recomputeChurchWideTotals() {
+  const { data: areas, error } = await supabase.from('area_people_stats').select('membership_actual, active_membership_actual')
+  if (error) throw new Error(error.message)
+  const totalMembers = areas.reduce((sum, a) => sum + Number(a.membership_actual), 0)
+  const activeMembers = areas.reduce((sum, a) => sum + Number(a.active_membership_actual), 0)
+  const { error: writeErr } = await supabase.from('org_stats').update({ total_members: totalMembers, active_members: activeMembers }).eq('id', 1)
+  if (writeErr) throw new Error(writeErr.message)
 }
 
 function monthRange(monthStart) {
@@ -773,6 +874,27 @@ export async function recomputeMonthlyActual(areaName, fieldKey, monthStart) {
     const totalGiving = Number(row.tithes_actual) + Number(row.offerings_actual) + Number(row.pledges_actual) + Number(row.mission_offering_actual)
     const { error: writeErr } = await supabase.from('area_financial_stats').update({ total_giving_actual: totalGiving }).eq('area_name', areaName)
     if (writeErr) throw new Error(writeErr.message)
+  }
+
+  // Demographic fields (Cat1/Cat2/Attendance/First Timers × Men/Women/
+  // Young Adult/KKB/Children) each roll up into one of area_people_stats'
+  // existing parent columns — recomputed here as the sum of ALL FIVE
+  // demographics' current actuals, not just the one that just changed.
+  const group = DEMOGRAPHIC_GROUPS[fieldKey]
+  if (group) {
+    const siblingColumns = group.siblings.map((key) => FIELD_TABLE_MAP[key].column)
+    const { data: row, error: readErr } = await supabase.from('area_people_stats').select(siblingColumns.join(', ')).eq('area_name', areaName).single()
+    if (readErr) throw new Error(readErr.message)
+    const parentTotal = siblingColumns.reduce((sum, col) => sum + Number(row[col]), 0)
+    const { error: writeErr } = await supabase.from('area_people_stats').update({ [group.parentColumn]: parentTotal }).eq('area_name', areaName)
+    if (writeErr) throw new Error(writeErr.message)
+
+    // Category 1 (membership_actual) and Category 2 (active_membership_actual)
+    // are also church-wide figures on org_stats — re-sum across every
+    // area whenever either of those two specific parent totals changes.
+    if (group.parentColumn === 'membership_actual' || group.parentColumn === 'active_membership_actual') {
+      await recomputeChurchWideTotals()
+    }
   }
 
   return total
