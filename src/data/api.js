@@ -752,6 +752,7 @@ const FIELD_TABLE_MAP = {
   lgFirstTimersYoungAdult: { table: 'life_groups', column: 'lg_first_timers_young_adult_actual', matchColumn: 'name' },
   lgFirstTimersKKB: { table: 'life_groups', column: 'lg_first_timers_kkb_actual', matchColumn: 'name' },
   lgFirstTimersChildren: { table: 'life_groups', column: 'lg_first_timers_children_actual', matchColumn: 'name' },
+  lgNumberOfGroups: { table: 'life_groups', column: 'number_of_groups_actual', matchColumn: 'name' },
 }
 
 // Maps each demographic field to the parent total it rolls up into, and
