@@ -24,6 +24,8 @@ export default function PeopleGrowth() {
     firstTimersKpi,
     firstTimerFunnel,
     areaPeopleStats,
+    cat1Demographics,
+    cat2Demographics,
   } = data
 
   const maxCount = firstTimerFunnel[0].count
@@ -54,10 +56,12 @@ export default function PeopleGrowth() {
             parentActual={totalMembers}
             parentPya={totalMembersPya}
             parentMonths={monthlySeries?.total?.membership?.months}
+            parentDemographics={cat1Demographics}
             subsetLabel="Category 2 ( SSAM+ SSAM/LGAM)"
             subsetActual={activeMembers}
             subsetPya={activeMembersPya}
             subsetMonths={monthlySeries?.total?.activeMembership?.months}
+            subsetDemographics={cat2Demographics}
             rateLabel="Rate"
             formatter={commas}
             parentColor="#082253"
