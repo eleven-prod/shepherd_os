@@ -248,6 +248,21 @@ button {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
+
+  /* Mobile-only scroll pane: on phones, keep the form and progress
+     table side by side (rather than the normal .two-col stacking) and
+     let the pair scroll both directions instead — a safety net so
+     content is always reachable even where stacking alone wasn't
+     enough. Desktop is untouched; .two-col's own responsive behavior
+     still applies above this breakpoint. */
+  .mobile-scroll-pane {
+    overflow: auto;
+    max-width: 100%;
+  }
+  .mobile-scroll-pane > .two-col {
+    grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr) !important;
+    min-width: 560px;
+  }
 }
 
 /* Extra-narrow phones: even 2-up gets tight for currency figures — drop
