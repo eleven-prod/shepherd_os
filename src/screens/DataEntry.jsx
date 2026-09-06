@@ -299,7 +299,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
                     {demographics.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ flex: 1, fontSize: 13 }}>{dLabel}</div>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{dLabel}</div>
                         <input
                           type="number"
                           step={1}
@@ -312,7 +312,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                      <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Total</div>
+                      <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total</div>
                       <div style={{ width: 110, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
@@ -550,7 +550,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
   return (
     <div className="card" style={{ borderTop: '4px solid #3c76f1' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>{areaName}</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1, minWidth: 0, overflowWrap: 'break-word' }}>{areaName}</h2>
         <span
           style={{
             fontSize: 10,
@@ -629,7 +629,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
                     {DEMOGRAPHICS.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ flex: 1, fontSize: 13 }}>{dLabel}</div>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{dLabel}</div>
                         <input
                           type="number"
                           step={1}
@@ -642,7 +642,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                      <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Total</div>
+                      <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total</div>
                       <div style={{ width: 110, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
@@ -652,7 +652,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
 
             {SIMPLE_FIELDS.map(([key, label, kind]) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1, fontSize: 13 }}>{label}</div>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{label}</div>
                 <input
                   type="number"
                   step={kind === 'financial' ? 'any' : 1}
