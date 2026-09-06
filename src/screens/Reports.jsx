@@ -34,9 +34,9 @@ export default function Reports() {
         >
           ▤
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>{selected?.label}</div>
-          <div className="body-muted">Church-wide totals for this period, from the original POR data.</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, overflowWrap: 'break-word' }}>{selected?.label}</div>
+          <div className="body-muted" style={{ overflowWrap: 'break-word' }}>Church-wide totals for this period, from the original POR data.</div>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ function ReportSection({ title, children }) {
 function MetricRow({ label, actual, target, bold }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ flex: 1, fontSize: 14, fontWeight: bold ? 700 : 400 }}>{label}</div>
+      <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: bold ? 700 : 400, overflowWrap: 'break-word' }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 700 }}>
         {actual}
         {target != null && <span className="body-muted" style={{ fontWeight: 400 }}> {' '}/ {target} target</span>}
