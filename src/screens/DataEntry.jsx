@@ -6,12 +6,29 @@ import { useAppData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRecentSubmissions } from '../data/api'
 
-// Each field maps to one of the 3 underlying tables — Data Entry writes
-// individual WEEKLY entries (the real source of truth), and the
-// existing monthly Actual columns are kept in sync by summing them.
-const FIELDS = [
-  ['attendance', 'Sunday Service Attendance', 'people'],
-  ['firstTimers', 'First Timers', 'people'],
+// 4 categories get a full demographic breakdown (Men/Women/Young Adult/
+// KKB/Children) instead of one flat number — each demographic is its
+// own weekly-entry field (e.g. cat1Men, attendanceWomen), and the
+// category's own Total is auto-computed as the sum of its 5
+// demographics, both here for the current week and, via
+// recomputeMonthlyActual, for the resulting monthly figure.
+const DEMOGRAPHIC_CATEGORIES = [
+  ['cat1', 'Category 1 ( SSAM+LGAM+ SSAM/LGAM)'],
+  ['cat2', 'Category 2 ( SSAM+ SSAM/LGAM)'],
+  ['attendance', 'Sunday Service Attendance'],
+  ['firstTimers', 'Total No. of First Timers ( Sunday Service)'],
+]
+const DEMOGRAPHICS = [
+  ['Men', 'Men'],
+  ['Women', 'Women'],
+  ['YoungAdult', 'Young Adult'],
+  ['KKB', 'KKB'],
+  ['Children', 'Children'],
+]
+const DEMOGRAPHIC_FIELD_KEYS = DEMOGRAPHIC_CATEGORIES.flatMap(([prefix]) => DEMOGRAPHICS.map(([dKey]) => `${prefix}${dKey}`))
+
+// Everything else stays a single flat number, unchanged.
+const SIMPLE_FIELDS = [
   ['tithes', 'Tithes', 'financial'],
   ['offerings', 'Offering', 'financial'],
   ['pledges', 'Pledges', 'financial'],
@@ -21,7 +38,12 @@ const FIELDS = [
   ['lgAttendance', 'Life Group Attendance', 'lifeGroup'],
   ['lgFirstTimers', 'Life Group First Timer', 'lifeGroup'],
 ]
-const FIELD_LABELS = Object.fromEntries(FIELDS.map(([key, label]) => [key, label]))
+const ALL_FIELD_KEYS = [...DEMOGRAPHIC_FIELD_KEYS, ...SIMPLE_FIELDS.map(([key]) => key)]
+
+const FIELD_LABELS = Object.fromEntries([
+  ...DEMOGRAPHIC_CATEGORIES.flatMap(([prefix, label]) => DEMOGRAPHICS.map(([dKey, dLabel]) => [`${prefix}${dKey}`, `${label} — ${dLabel}`])),
+  ...SIMPLE_FIELDS.map(([key, label]) => [key, label]),
+])
 const ADMIN_ROLES = ['admin', 'pastor_mis']
 
 function todayStr() {
@@ -196,7 +218,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
     setSelectedWeek(weeks.find((w) => isWithinDeadline(w)) || weeks[weeks.length - 1])
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weeks.join(',')])
-  const [form, setForm] = useState(Object.fromEntries(FIELDS.map(([key]) => [key, ''])))
+  const [form, setForm] = useState(Object.fromEntries(ALL_FIELD_KEYS.map((key) => [key, ''])))
   const [entries, setEntries] = useState([])
   const [loadingEntries, setLoadingEntries] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -210,7 +232,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
     try {
       const data = await fetchWeeklyEntries(areaName, `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`)
       setEntries(data)
-      const forThisWeek = Object.fromEntries(FIELDS.map(([key]) => [key, '']))
+      const forThisWeek = Object.fromEntries(ALL_FIELD_KEYS.map((key) => [key, '']))
       for (const e of data) {
         if (e.week_start === selectedWeek && forThisWeek[e.field_key] !== undefined) {
           forThisWeek[e.field_key] = e.value
@@ -237,7 +259,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
     setSaving(true)
     setError(null)
     try {
-      const changedFields = FIELDS.filter(([key]) => form[key] !== '').map(([key]) => key)
+      const changedFields = ALL_FIELD_KEYS.filter((key) => form[key] !== '')
       for (const key of changedFields) {
         await upsertWeeklyEntry(areaName, key, selectedWeek, form[key])
       }
@@ -254,7 +276,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
     }
   }
 
-  const totals = Object.fromEntries(FIELDS.map(([key]) => [key, entries.filter((e) => e.field_key === key).reduce((s, e) => s + Number(e.value), 0)]))
+  const totals = Object.fromEntries(ALL_FIELD_KEYS.map((key) => [key, entries.filter((e) => e.field_key === key).reduce((s, e) => s + Number(e.value), 0)]))
 
   return (
     <div className="card">
@@ -328,8 +350,37 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
             </div>
           ) : null}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, opacity: locked ? 0.5 : 1 }}>
-            {FIELDS.map(([key, label, kind]) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, opacity: locked ? 0.5 : 1 }}>
+            {DEMOGRAPHIC_CATEGORIES.map(([prefix, label]) => {
+              const categoryTotal = DEMOGRAPHICS.reduce((sum, [dKey]) => sum + (Number(form[`${prefix}${dKey}`]) || 0), 0)
+              return (
+                <div key={prefix}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{label}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
+                    {DEMOGRAPHICS.map(([dKey, dLabel]) => (
+                      <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ flex: 1, fontSize: 13 }}>{dLabel}</div>
+                        <input
+                          type="number"
+                          step={1}
+                          value={form[`${prefix}${dKey}`]}
+                          onChange={set(`${prefix}${dKey}`)}
+                          disabled={locked}
+                          style={{ ...sheetInputStyle, width: 110 }}
+                          placeholder="0"
+                        />
+                      </div>
+                    ))}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+                      <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Total Membership</div>
+                      <div style={{ width: 110, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+
+            {SIMPLE_FIELDS.map(([key, label, kind]) => (
               <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, fontSize: 13 }}>{label}</div>
                 <input
@@ -395,7 +446,25 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {FIELDS.map(([key, label]) => (
+                  {DEMOGRAPHIC_CATEGORIES.map(([prefix, label]) => (
+                    <tr key={prefix} style={{ borderTop: '1px solid var(--line)' }}>
+                      <td style={{ padding: '6px 8px' }}>{label} — Total</td>
+                      {weeks.map((w) => {
+                        const weekEntries = entries.filter((e) => e.week_start === w && DEMOGRAPHICS.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
+                        const weekTotal = weekEntries.reduce((sum, e) => sum + Number(e.value), 0)
+                        const title = weekEntries.length > 0 ? `${weekEntries.length} of 5 demographics entered` : undefined
+                        return (
+                          <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', cursor: weekEntries.length > 0 ? 'help' : 'default' }}>
+                            {weekEntries.length > 0 ? weekTotal : '—'}
+                          </td>
+                        )
+                      })}
+                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
+                        {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
+                      </td>
+                    </tr>
+                  ))}
+                  {SIMPLE_FIELDS.map(([key, label]) => (
                     <tr key={key} style={{ borderTop: '1px solid var(--line)' }}>
                       <td style={{ padding: '6px 8px' }}>{label}</td>
                       {weeks.map((w) => {
