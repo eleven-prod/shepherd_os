@@ -20,7 +20,7 @@ import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRec
 // weeks legitimately do add up to a monthly total.
 const DEMOGRAPHIC_CATEGORIES = [
   ['attendance', 'Sunday Service Attendance'],
-  ['firstTimers', 'Total No. of First Timers ( Sunday Service)'],
+  ['firstTimers', 'SSA First Timers'],
 ]
 const DEMOGRAPHICS = [
   ['Men', 'Men'],
@@ -31,7 +31,10 @@ const DEMOGRAPHICS = [
 ]
 const DEMOGRAPHIC_FIELD_KEYS = DEMOGRAPHIC_CATEGORIES.flatMap(([prefix]) => DEMOGRAPHICS.map(([dKey]) => `${prefix}${dKey}`))
 
-// Everything else stays a single flat number, unchanged.
+// Everything else stays a single flat number, unchanged. Life Group
+// Attendance/First Timers moved out to their own dedicated card below
+// (LifeGroupCard) rather than being buried inside each general church
+// card.
 const SIMPLE_FIELDS = [
   ['tithes', 'Tithes', 'financial'],
   ['offerings', 'Offering', 'financial'],
@@ -39,8 +42,6 @@ const SIMPLE_FIELDS = [
   ['missionOffering', 'Mission', 'financial'],
   ['support', 'Support', 'financial'],
   ['numberOfTithers', 'Number of Tithers', 'people'],
-  ['lgAttendance', 'Life Group Attendance', 'lifeGroup'],
-  ['lgFirstTimers', 'Life Group First Timer', 'lifeGroup'],
 ]
 const ALL_FIELD_KEYS = [...DEMOGRAPHIC_FIELD_KEYS, ...SIMPLE_FIELDS.map(([key]) => key)]
 
@@ -145,11 +146,227 @@ export default function DataEntry() {
         </div>
       )}
       <RecentSubmissions />
+      <div style={{ marginTop: 20 }}>
+        <LifeGroupCard areaNames={churches.map((c) => c.areaName)} weeks={weeks} year={year} monthIndex={monthIndex} />
+      </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 20 }}>
         {churches.map((church) => (
           <ChurchCard key={church.areaName} church={church} weeks={weeks} year={year} monthIndex={monthIndex} />
         ))}
       </div>
+    </div>
+  )
+}
+
+function LifeGroupCard({ areaNames, weeks, year, monthIndex }) {
+  const { role } = useAuth()
+  const isAdmin = ADMIN_ROLES.includes(role)
+
+  const [selectedWeek, setSelectedWeek] = useState(weeks.find((w) => isWithinDeadline(w)) || weeks[weeks.length - 1])
+  const [form, setForm] = useState({})
+  const [entries, setEntries] = useState({}) // { [areaName]: weeklyEntry[] }
+  const [loadingEntries, setLoadingEntries] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+  const [savedFlash, setSavedFlash] = useState(false)
+
+  useEffect(() => {
+    setSelectedWeek(weeks.find((w) => isWithinDeadline(w)) || weeks[weeks.length - 1])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weeks.join(',')])
+
+  const locked = !isAdmin && !isWithinDeadline(selectedWeek)
+
+  async function loadEntries() {
+    setLoadingEntries(true)
+    try {
+      const monthStart = `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`
+      const results = await Promise.all(areaNames.map((name) => fetchWeeklyEntries(name, monthStart)))
+      const byArea = Object.fromEntries(areaNames.map((name, i) => [name, results[i]]))
+      setEntries(byArea)
+
+      const forThisWeek = {}
+      for (const name of areaNames) {
+        for (const key of ['lgAttendance', 'lgFirstTimers']) {
+          const match = byArea[name].find((e) => e.field_key === key && e.week_start === selectedWeek)
+          forThisWeek[`${name}:${key}`] = match ? match.value : ''
+        }
+      }
+      setForm(forThisWeek)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoadingEntries(false)
+    }
+  }
+
+  useEffect(() => {
+    loadEntries()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWeek])
+
+  function set(name, key) {
+    return (e) => setForm((f) => ({ ...f, [`${name}:${key}`]: e.target.value }))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setError(null)
+    try {
+      const changed = []
+      for (const name of areaNames) {
+        for (const key of ['lgAttendance', 'lgFirstTimers']) {
+          if (form[`${name}:${key}`] !== '') changed.push([name, key])
+        }
+      }
+      for (const [name, key] of changed) {
+        await upsertWeeklyEntry(name, key, selectedWeek, form[`${name}:${key}`])
+      }
+      for (const [name, key] of changed) {
+        await recomputeMonthlyActual(name, key, selectedWeek)
+      }
+      await loadEntries()
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 2000)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function monthlyTotal(name, key) {
+    return (entries[name] || []).filter((e) => e.field_key === key).reduce((sum, e) => sum + Number(e.value), 0)
+  }
+
+  return (
+    <div className="card">
+      <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Life Groups</h2>
+      <div className="body-muted" style={{ marginBottom: 14 }}>
+        Attendance and First Timers for each Life Group, in one place.
+      </div>
+
+      <div className="label" style={{ marginBottom: 6 }}>
+        {monthLabel(year, monthIndex)}
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        {weeks.map((w, i) => {
+          const weekLocked = !isAdmin && !isWithinDeadline(w)
+          const isSelected = w === selectedWeek
+          return (
+            <button
+              key={w}
+              onClick={() => setSelectedWeek(w)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: isSelected ? '2px solid var(--primary)' : '1px solid var(--line)',
+                background: isSelected ? 'rgba(60,118,241,0.08)' : 'var(--surface)',
+                fontSize: 12.5,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+              }}
+            >
+              {weekLocked && <LockIcon size={11} />}
+              <span>
+                Week {i + 1} — {new Date(w + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {locked && (
+        <div style={{ background: 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 18px', marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <LockIcon size={14} /> This week is locked
+          </div>
+          <div className="body-muted" style={{ fontSize: 13 }}>
+            The entry window for this week has closed. Contact an Admin if a correction is needed.
+          </div>
+        </div>
+      )}
+
+      {loadingEntries ? (
+        <div className="body-muted">Loading...</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480, opacity: locked ? 0.5 : 1 }}>
+            <thead>
+              <tr style={{ background: 'var(--surface-muted)' }}>
+                <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-muted)' }}>Life Group</th>
+                <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-muted)' }}>Attendance</th>
+                <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 12.5, fontWeight: 700, color: 'var(--ink-muted)' }}>First Timers</th>
+              </tr>
+            </thead>
+            <tbody>
+              {areaNames.map((name) => (
+                <tr key={name} style={{ borderTop: '1px solid var(--line)' }}>
+                  <td style={{ padding: '8px 10px', fontSize: 13.5, fontWeight: 700 }}>{name}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                    <input
+                      type="number"
+                      step={1}
+                      value={form[`${name}:lgAttendance`] ?? ''}
+                      onChange={set(name, 'lgAttendance')}
+                      disabled={locked}
+                      style={{ ...sheetInputStyle, width: 90, textAlign: 'right' }}
+                      placeholder="0"
+                    />
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right' }}>
+                    <input
+                      type="number"
+                      step={1}
+                      value={form[`${name}:lgFirstTimers`] ?? ''}
+                      onChange={set(name, 'lgFirstTimers')}
+                      disabled={locked}
+                      style={{ ...sheetInputStyle, width: 90, textAlign: 'right' }}
+                      placeholder="0"
+                    />
+                  </td>
+                </tr>
+              ))}
+              <tr style={{ borderTop: '2px solid var(--line)', background: 'var(--surface-muted)' }}>
+                <td style={{ padding: '8px 10px', fontWeight: 700 }}>{monthLabel(year, monthIndex)} Total</td>
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
+                  {areaNames.reduce((sum, name) => sum + monthlyTotal(name, 'lgAttendance'), 0)}
+                </td>
+                <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700 }}>
+                  {areaNames.reduce((sum, name) => sum + monthlyTotal(name, 'lgFirstTimers'), 0)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {error && <div style={{ color: 'var(--status-critical)', fontSize: 13, marginTop: 10 }}>{error}</div>}
+
+      {!locked && (
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            width: '100%',
+            marginTop: 16,
+            padding: '10px 0',
+            borderRadius: 8,
+            border: 'none',
+            background: savedFlash ? 'var(--status-on-target)' : 'var(--primary)',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: 13.5,
+            cursor: saving ? 'default' : 'pointer',
+            opacity: saving ? 0.7 : 1,
+          }}
+        >
+          {saving ? 'Saving...' : savedFlash ? 'Saved ✓' : `Save Week of ${selectedWeek}`}
+        </button>
+      )}
     </div>
   )
 }
