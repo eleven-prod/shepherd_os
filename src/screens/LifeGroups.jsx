@@ -46,7 +46,7 @@ export default function LifeGroups() {
       <div className="two-col-reverse">
         <div className="card">
           <div style={{ display: 'flex' }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Church-Wide Roll-Up</h2>
+            <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1, minWidth: 0 }}>Church-Wide Roll-Up</h2>
             <StatusBadge status={lifeGroupHeadcountKpi.status} />
           </div>
           <div className="stat-large" style={{ marginTop: 14 }}>
@@ -77,7 +77,7 @@ export default function LifeGroups() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>Churches</h2>
+        <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1, minWidth: 0 }}>Churches</h2>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -139,9 +139,9 @@ export default function LifeGroups() {
           {filtered.map((g) => (
             <div key={g.name} className="card" style={{ padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 14.5 }}>{g.name}</div>
-                  <div className="body-muted" style={{ marginTop: 2 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 14.5, overflowWrap: 'break-word' }}>{g.name}</div>
+                  <div className="body-muted" style={{ marginTop: 2, overflowWrap: 'break-word' }}>
                     {g.barangay} · {g.district}
                   </div>
                 </div>
