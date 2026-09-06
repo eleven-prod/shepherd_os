@@ -752,7 +752,16 @@ const FIELD_TABLE_MAP = {
   lgFirstTimersYoungAdult: { table: 'life_groups', column: 'lg_first_timers_young_adult_actual', matchColumn: 'name' },
   lgFirstTimersKKB: { table: 'life_groups', column: 'lg_first_timers_kkb_actual', matchColumn: 'name' },
   lgFirstTimersChildren: { table: 'life_groups', column: 'lg_first_timers_children_actual', matchColumn: 'name' },
-  lgNumberOfGroups: { table: 'life_groups', column: 'number_of_groups_actual', matchColumn: 'name' },
+
+  // Number of Life Groups — broken down including Hetero, a demographic
+  // specific to this one category (not part of the standard 5 used for
+  // Attendance/First Timers elsewhere).
+  lgNumberOfGroupsMen: { table: 'life_groups', column: 'number_of_groups_men_actual', matchColumn: 'name' },
+  lgNumberOfGroupsWomen: { table: 'life_groups', column: 'number_of_groups_women_actual', matchColumn: 'name' },
+  lgNumberOfGroupsYoungAdult: { table: 'life_groups', column: 'number_of_groups_young_adult_actual', matchColumn: 'name' },
+  lgNumberOfGroupsKKB: { table: 'life_groups', column: 'number_of_groups_kkb_actual', matchColumn: 'name' },
+  lgNumberOfGroupsChildren: { table: 'life_groups', column: 'number_of_groups_children_actual', matchColumn: 'name' },
+  lgNumberOfGroupsHetero: { table: 'life_groups', column: 'number_of_groups_hetero_actual', matchColumn: 'name' },
 }
 
 // Maps each demographic field to the parent total it rolls up into, and
@@ -796,6 +805,13 @@ const DEMOGRAPHIC_GROUPS = {
   lgFirstTimersYoungAdult: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
   lgFirstTimersKKB: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
   lgFirstTimersChildren: { siblings: ['lgFirstTimersMen', 'lgFirstTimersWomen', 'lgFirstTimersYoungAdult', 'lgFirstTimersKKB', 'lgFirstTimersChildren'], parentColumn: 'first_timers_actual' },
+
+  lgNumberOfGroupsMen: { siblings: ['lgNumberOfGroupsMen', 'lgNumberOfGroupsWomen', 'lgNumberOfGroupsYoungAdult', 'lgNumberOfGroupsKKB', 'lgNumberOfGroupsChildren', 'lgNumberOfGroupsHetero'], parentColumn: 'number_of_groups_actual' },
+  lgNumberOfGroupsWomen: { siblings: ['lgNumberOfGroupsMen', 'lgNumberOfGroupsWomen', 'lgNumberOfGroupsYoungAdult', 'lgNumberOfGroupsKKB', 'lgNumberOfGroupsChildren', 'lgNumberOfGroupsHetero'], parentColumn: 'number_of_groups_actual' },
+  lgNumberOfGroupsYoungAdult: { siblings: ['lgNumberOfGroupsMen', 'lgNumberOfGroupsWomen', 'lgNumberOfGroupsYoungAdult', 'lgNumberOfGroupsKKB', 'lgNumberOfGroupsChildren', 'lgNumberOfGroupsHetero'], parentColumn: 'number_of_groups_actual' },
+  lgNumberOfGroupsKKB: { siblings: ['lgNumberOfGroupsMen', 'lgNumberOfGroupsWomen', 'lgNumberOfGroupsYoungAdult', 'lgNumberOfGroupsKKB', 'lgNumberOfGroupsChildren', 'lgNumberOfGroupsHetero'], parentColumn: 'number_of_groups_actual' },
+  lgNumberOfGroupsChildren: { siblings: ['lgNumberOfGroupsMen', 'lgNumberOfGroupsWomen', 'lgNumberOfGroupsYoungAdult', 'lgNumberOfGroupsKKB', 'lgNumberOfGroupsChildren', 'lgNumberOfGroupsHetero'], parentColumn: 'number_of_groups_actual' },
+  lgNumberOfGroupsHetero: { siblings: ['lgNumberOfGroupsMen', 'lgNumberOfGroupsWomen', 'lgNumberOfGroupsYoungAdult', 'lgNumberOfGroupsKKB', 'lgNumberOfGroupsChildren', 'lgNumberOfGroupsHetero'], parentColumn: 'number_of_groups_actual' },
 }
 
 // Category 1 and Category 2 are church-wide totals (org_stats.total_members
