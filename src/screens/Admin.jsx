@@ -357,7 +357,7 @@ function AreaPeopleSheet({ area, onClose, onSaved }) {
             <div className="label" style={{ marginBottom: 6 }}>
               {label}
             </div>
-            <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <div style={{ flex: 1 }}>
                 <Field label="Target">
                   <input type="number" style={sheetInputStyle} value={form[targetKey]} onChange={set(targetKey)} />
@@ -557,7 +557,7 @@ function LifeGroupSheet({ group, onClose, onSaved }) {
         <Field label="Leader / Group Count">
           <input style={sheetInputStyle} value={form.leader} onChange={set('leader')} placeholder="e.g. 57 Groups, or a name" />
         </Field>
-        <div style={{ display: 'flex', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
             <Field label="Target Headcount">
               <input type="number" style={sheetInputStyle} value={form.targetHeadcount} onChange={set('targetHeadcount')} />
@@ -571,7 +571,7 @@ function LifeGroupSheet({ group, onClose, onSaved }) {
         </div>
         {group && (
           <>
-            <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <div style={{ flex: 1 }}>
                 <Field label="LG Leaders — Target">
                   <input type="number" style={sheetInputStyle} value={form.leadersTarget} onChange={set('leadersTarget')} />
@@ -583,7 +583,7 @@ function LifeGroupSheet({ group, onClose, onSaved }) {
                 </Field>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <div style={{ flex: 1 }}>
                 <Field label="LG Attendance — Target">
                   <input type="number" style={sheetInputStyle} value={form.attendanceTarget} onChange={set('attendanceTarget')} />
@@ -755,7 +755,7 @@ function FinancialSheet({ category, onClose, onSaved }) {
         <Field label="Category Name">
           <input style={sheetInputStyle} value={form.name} onChange={set('name')} placeholder="e.g. Tithes" />
         </Field>
-        <div style={{ display: 'flex', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
             <Field label="Target (₱)">
               <input type="number" style={sheetInputStyle} value={form.target} onChange={set('target')} />
@@ -883,7 +883,7 @@ function AreaFinancialSheet({ area, onClose, onSaved }) {
             <div className="label" style={{ marginBottom: 6 }}>
               {label} (₱)
             </div>
-            <div style={{ display: 'flex', gap: 14 }}>
+            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
               <div style={{ flex: 1 }}>
                 <Field label="Target">
                   <input type="number" style={sheetInputStyle} value={form[targetKey]} onChange={set(targetKey)} />
@@ -1155,13 +1155,13 @@ function AttentionSection() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {data.attentionItems.map((item) => (
           <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 16 }}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <StatusBadge status={item.severity} compact />
                 <span className="caption">{item.area}</span>
               </div>
-              <div style={{ fontWeight: 700, fontSize: 14, marginTop: 6 }}>{item.title}</div>
-              <div className="body-muted" style={{ marginTop: 2 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginTop: 6, overflowWrap: 'break-word' }}>{item.title}</div>
+              <div className="body-muted" style={{ marginTop: 2, overflowWrap: 'break-word' }}>
                 {item.detail}
               </div>
             </div>
@@ -1239,7 +1239,7 @@ function AttentionSheet({ item, onClose, onSaved }) {
             placeholder="One or two sentences of context"
           />
         </Field>
-        <div style={{ display: 'flex', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
             <Field label="Severity">
               <select style={sheetInputStyle} value={form.severity} onChange={set('severity')}>
@@ -1714,7 +1714,7 @@ function KpiSheet({ kpi, onClose, onSaved }) {
             </select>
           </Field>
         )}
-        <div style={{ display: 'flex', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
             <Field label="Target">
               <input type="number" style={sheetInputStyle} value={form.target} onChange={set('target')} />
@@ -1728,7 +1728,7 @@ function KpiSheet({ kpi, onClose, onSaved }) {
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 14 }}>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
           <div style={{ flex: 1 }}>
             <Field label="Unit">
               <select style={sheetInputStyle} value={form.unit} onChange={set('unit')}>
