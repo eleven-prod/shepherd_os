@@ -23,10 +23,12 @@ export default function ParentSubsetPanel({
   parentActual,
   parentPya,
   parentMonths,
+  parentDemographics,
   subsetLabel,
   subsetActual,
   subsetPya,
   subsetMonths,
+  subsetDemographics,
   rateLabel = 'Rate',
   formatter = (v) => Math.round(v).toString(),
   parentColor = '#082253',
@@ -40,8 +42,8 @@ export default function ParentSubsetPanel({
   const ratePpChange = rateActual - ratePya // percentage points, not percent-of-percent
 
   const cards = [
-    { label: parentLabel, value: formatter(parentActual), growth: parentGrowthPct, growthUnit: '%' },
-    { label: subsetLabel, value: formatter(subsetActual), growth: subsetGrowthPct, growthUnit: '%' },
+    { label: parentLabel, value: formatter(parentActual), growth: parentGrowthPct, growthUnit: '%', demographics: parentDemographics },
+    { label: subsetLabel, value: formatter(subsetActual), growth: subsetGrowthPct, growthUnit: '%', demographics: subsetDemographics },
     { label: rateLabel, value: `${rateActual.toFixed(1)}%`, growth: ratePpChange, growthUnit: 'pp' },
   ]
 
@@ -97,6 +99,22 @@ export default function ParentSubsetPanel({
                 {c.growth >= 0 ? '+' : ''}
                 {c.growth.toFixed(1)}
                 {c.growthUnit} vs PYA
+              </div>
+            )}
+            {c.demographics && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {[
+                  ['Men', c.demographics.men],
+                  ['Women', c.demographics.women],
+                  ['Young Adult', c.demographics.youngAdult],
+                  ['KKB', c.demographics.kkb],
+                  ['Children', c.demographics.children],
+                ].map(([dLabel, dValue]) => (
+                  <div key={dLabel} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
+                    <span className="body-muted">{dLabel}</span>
+                    <span style={{ fontWeight: 700 }}>{formatter(dValue)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
