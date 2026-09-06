@@ -146,14 +146,12 @@ export default function DataEntry() {
         </div>
       )}
       <RecentSubmissions />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 32, marginTop: 20 }}>
         {churches.map((church) => (
-          <ChurchCard key={church.areaName} church={church} weeks={weeks} year={year} monthIndex={monthIndex} />
-        ))}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginTop: 20 }}>
-        {churches.map((church) => (
-          <LifeGroupAreaCard key={church.areaName} areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} />
+          <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} />
+            <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} />
+          </div>
         ))}
       </div>
     </div>
@@ -168,7 +166,8 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
     ['lgAttendance', 'Life Group Attendance'],
     ['lgFirstTimers', 'Life Group First Timers'],
   ]
-  const LG_FIELD_KEYS = LG_CATEGORIES.flatMap(([prefix]) => DEMOGRAPHICS.map(([dKey]) => `${prefix}${dKey}`))
+  const LG_SIMPLE_FIELDS = [['lgNumberOfGroups', 'Number of Life Groups']]
+  const LG_FIELD_KEYS = [...LG_CATEGORIES.flatMap(([prefix]) => DEMOGRAPHICS.map(([dKey]) => `${prefix}${dKey}`)), ...LG_SIMPLE_FIELDS.map(([key]) => key)]
 
   const [selectedWeek, setSelectedWeek] = useState(weeks.find((w) => isWithinDeadline(w)) || weeks[weeks.length - 1])
   const [form, setForm] = useState(Object.fromEntries(LG_FIELD_KEYS.map((key) => [key, ''])))
@@ -237,7 +236,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
   const totals = Object.fromEntries(LG_FIELD_KEYS.map((key) => [key, entries.filter((e) => e.field_key === key).reduce((s, e) => s + Number(e.value), 0)]))
 
   return (
-    <div className="card">
+    <div className="card" style={{ borderTop: '4px solid #00c781' }}>
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{areaName} — Life Group</h2>
       <div className="body-muted" style={{ marginBottom: 14 }}>
         Attendance and First Timers for this Life Group, by demographic.
@@ -318,6 +317,21 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                 </div>
               )
             })}
+
+            {LG_SIMPLE_FIELDS.map(([key, label]) => (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{label}</div>
+                <input
+                  type="number"
+                  step={1}
+                  value={form[key]}
+                  onChange={set(key)}
+                  disabled={locked}
+                  style={{ ...sheetInputStyle, width: 110 }}
+                  placeholder="0"
+                />
+              </div>
+            ))}
           </div>
 
           {error && <div style={{ color: 'var(--status-critical)', fontSize: 13, marginTop: 10 }}>{error}</div>}
@@ -406,6 +420,20 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                         </td>
                       </tr>
                     </Fragment>
+                  ))}
+                  {LG_SIMPLE_FIELDS.map(([key, label]) => (
+                    <tr key={key} style={{ borderTop: '2px solid var(--line)' }}>
+                      <td style={{ padding: '6px 8px', fontWeight: 700 }}>{label}</td>
+                      {weeks.map((w) => {
+                        const entry = entries.find((e) => e.field_key === key && e.week_start === w)
+                        return (
+                          <td key={w} style={{ padding: '6px 8px', textAlign: 'right' }}>
+                            {entry ? entry.value : '—'}
+                          </td>
+                        )
+                      })}
+                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{totals[key]}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -546,7 +574,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
   const totals = Object.fromEntries(ALL_FIELD_KEYS.map((key) => [key, entries.filter((e) => e.field_key === key).reduce((s, e) => s + Number(e.value), 0)]))
 
   return (
-    <div className="card">
+    <div className="card" style={{ borderTop: '4px solid #3c76f1' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, flex: 1 }}>{areaName}</h2>
         <span
