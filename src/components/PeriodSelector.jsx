@@ -80,6 +80,10 @@ export default function PeriodSelector() {
               borderRadius: 12,
               padding: 16,
               width: 260,
+              // Same right-anchored-popover overflow risk as NotificationBell —
+              // cap width to the viewport on narrow phones so it can't push
+              // past the screen edge and get clipped.
+              maxWidth: 'calc(100vw - 32px)',
               boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
             }}
             onClick={(e) => e.stopPropagation()}
