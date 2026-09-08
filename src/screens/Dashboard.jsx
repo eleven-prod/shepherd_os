@@ -56,7 +56,7 @@ export default function Dashboard() {
       <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
         <div>
           <div className="label">Overall Health</div>
-          <div className="stat-large" style={{ marginTop: 6, fontSize: 40 }}>
+          <div className="stat-large" style={{ marginTop: 6, fontSize: 'var(--font-hero)' }}>
             {overallHealthPct.toFixed(0)}%
           </div>
         </div>
