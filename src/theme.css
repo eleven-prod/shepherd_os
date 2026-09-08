@@ -242,8 +242,33 @@ button {
      card can ever get cut off / overflow sideways on a phone, without
      needing to hunt down and verify each individual usage separately.
      kpi-row and attention-grid are deliberately excluded (they already
-     have their own, intentional 2-column mobile layout below). */
-  .grid:not(.kpi-row):not(.attention-grid) {
+     have their own, intentional 2-column mobile layout below); two-up-grid
+     is excluded the same way. */
+  .grid:not(.kpi-row):not(.attention-grid):not(.two-up-grid) {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Same reasoning as .kpi-row above, for card rows elsewhere that don't
+   need the KPI-specific styling — e.g. the Membership screen's
+   Category 1/2/Rate cards and its Sunday Service Attendance pair. Forced
+   full-width single-column stacking turned each card into a long, thin
+   rectangle rather than something that reads as a real "card" — 2 columns
+   gives each one enough width to look proportioned instead of squeezed
+   flat, while still stacking to 1 column on truly narrow phones. */
+.two-up-grid > * {
+  min-width: 0;
+}
+
+@media (max-width: 639px) {
+  .two-up-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .two-up-grid {
     grid-template-columns: 1fr !important;
   }
 }
