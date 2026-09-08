@@ -86,7 +86,7 @@ export default function PeopleGrowth() {
 
       {/* --- Sunday Service Attendance (with PYA + monthly trend) vs Category 2 (actual only, for reference) --- */}
       <SectionBlock title="Sunday Service Attendance" subtitle="Overlapping against Category 2, colored by whether that month passed its own target">
-        <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 16 }}>
+        <div className="grid two-up-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 16 }}>
           <div className="card" style={{ minWidth: 0 }}>
             <div style={{ display: 'flex' }}>
               <div className="label" style={{ flex: 1 }}>
