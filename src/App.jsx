@@ -79,9 +79,17 @@ function AppShell() {
   const canAccessDataEntry = canView('data_entry')
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', maxWidth: '100vw', overflowX: 'hidden' }}>
       {!mobile && <Sidebar collapsed={collapsed} />}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+      {/* width:0 alongside flex:1 + minWidth:0 is a defensive addition for
+          iOS Safari: some WebKit versions don't fully constrain a flex
+          column child to its share of the row from flex:1/minWidth:0
+          alone, letting a wide descendant several levels down (a grid,
+          a chart) silently push this column — and everything after it —
+          wider than the viewport. width:0 with flex-grow:1 forces the
+          flex-basis to 0 so the final size comes purely from the
+          available space, not from content. */}
+      <div style={{ flex: 1, minWidth: 0, width: 0, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: mobile ? '12px 16px 0' : '16px 24px 0' }}>
           {mobile && (
             // Sign Out normally lives in the sidebar, which is hidden on
