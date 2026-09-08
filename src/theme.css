@@ -36,6 +36,7 @@
   --font-subheader: 17px; /* card/section titles — matches SF Pro's Headline */
   --font-body: 14px; /* default — body text, form controls, most labels */
   --font-caption: 12px; /* secondary/muted text, ~2px below body per the guide */
+  --font-hero: 40px; /* one-off "big number" stats outside .kpi-row/.stat-large's own 34px, e.g. Dashboard's Overall Health */
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
@@ -199,6 +200,18 @@ button {
   align-items: start;
 }
 
+/* Grid items default to min-width:auto, same gotcha documented above for
+   .grid — without this, a wide child (a chart, a table) inside either
+   column can force that column past its track's width. Normally harmless
+   on desktop's two real columns, but once max-width:720px collapses this
+   to a single column (below), that oversized column becomes the page's
+   entire width and gets clipped by the overflow-x:hidden safety net —
+   e.g. the Membership screen's Category panel + donut chart card. */
+.two-col > *,
+.two-col-reverse > * {
+  min-width: 0;
+}
+
 @media (max-width: 720px) {
   .two-col,
   .two-col-reverse {
@@ -236,6 +249,17 @@ button {
 }
 
 @media (max-width: 639px) {
+  /* Page titles (h1, 34px) and one-off hero stats (40px, e.g. Dashboard's
+     Overall Health) were fixed at their desktop size on every viewport —
+     on a phone that's a disproportionate share of the screen's width and
+     height, and forces titles like "Geographic Reach" onto two lines
+     more readily than needed. Scale both down for phone-width screens;
+     .kpi-row's own 34px stat-large already gets scaled below. */
+  :root {
+    --font-header: 26px;
+    --font-hero: 28px;
+  }
+
   .kpi-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
