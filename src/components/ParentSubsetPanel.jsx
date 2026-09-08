@@ -69,7 +69,7 @@ export default function ParentSubsetPanel({
 
   return (
     <div>
-      <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 18 }}>
+      <div className="grid two-up-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 18 }}>
         {cards.map((c) => (
           <div className="card" key={c.label} style={{ minWidth: 0 }}>
             <div className="label" style={{ overflowWrap: 'break-word' }}>
