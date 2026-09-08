@@ -179,6 +179,17 @@ button {
   padding-bottom: 40px;
   max-width: 1200px;
   margin: 0 auto;
+  /* Redundant on top of html/body/#root's overflow-x:hidden further up —
+     iOS Safari has a known quirk where that alone doesn't reliably stop
+     a nested flex/grid child from visually escaping past the edge once
+     it's several levels deep (AppShell's flex row > flex column >
+     .scroll-page > .two-col > .two-up-grid). Making THIS, the actual
+     per-page container every screen renders into, its own clip boundary
+     is more robust than relying on it inheriting that from three levels
+     up. width:100% pairs with it since a block element's width can still
+     be pushed by an overflowing descendant before overflow-x clips it. */
+  width: 100%;
+  overflow-x: hidden;
 }
 
 /* Two-column layouts (map+panel, table+chart, etc.) used across screens.
