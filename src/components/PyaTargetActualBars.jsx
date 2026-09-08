@@ -31,10 +31,15 @@ export default function PyaTargetActualBars({ pya, target, actual, valueFormatte
   const maxValue = Math.max(...bars.map((b) => b.value), 1)
 
   return (
-    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', maxWidth: 200, height: maxHeight + 44 }}>
+    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', maxWidth: 200, width: '100%', height: maxHeight + 44, overflow: 'hidden' }}>
       {bars.map((b) => (
-        <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end' }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink)', marginBottom: 3, whiteSpace: 'nowrap' }}>{valueFormatter(b.value)}</div>
+        // minWidth:0 matters here: without it, a wide peso value (e.g. a
+        // 6-7 digit amount) on the nowrap label below refuses to shrink
+        // below its own content width, forcing this whole chart past its
+        // 200px max-width with nothing to clip the overflow — exactly the
+        // "flex item won't shrink" bug this app has hit before elsewhere.
+        <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0, height: '100%', justifyContent: 'flex-end' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--ink)', marginBottom: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{valueFormatter(b.value)}</div>
           <div
             style={{
               width: 22,
