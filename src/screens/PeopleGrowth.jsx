@@ -6,6 +6,7 @@ import PyaBarChart from '../components/PyaBarChart'
 import ParentSubsetPanel from '../components/ParentSubsetPanel'
 import DonutChart from '../components/DonutChart'
 import OverlappingTargetBarChart from '../components/OverlappingTargetBarChart'
+import TrendChart from '../components/TrendChart'
 import { LoadingSpinner } from '../components/Spinner'
 import { commas } from '../data/api'
 import { useAppData } from '../context/DataContext'
@@ -141,6 +142,21 @@ export default function PeopleGrowth() {
         <div style={{ marginTop: 10, marginBottom: 18 }}>
           <PyaGrowth pya={firstTimersKpi.target} actual={firstTimersKpi.actual} formatter={commas} />
         </div>
+
+        {monthlySeries?.total?.firstTimers?.months && (
+          <div style={{ marginBottom: 18 }}>
+            <div className="label" style={{ marginBottom: 6 }}>
+              Monthly Trend
+            </div>
+            <TrendChart
+              points={monthlySeries.total.firstTimers.months.map((m) => ({
+                label: m.label,
+                value: m.unreported ? null : m.value,
+              }))}
+              valueFormatter={commas}
+            />
+          </div>
+        )}
 
         <div className="body-muted" style={{ marginBottom: 12 }}>
           Discipleship Pipeline: Evangelized → Pre-Encounter → Encounter → Post-Encounter → Water Baptized
