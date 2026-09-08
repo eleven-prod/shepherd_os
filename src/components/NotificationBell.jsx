@@ -69,6 +69,12 @@ export default function NotificationBell() {
               right: 0,
               zIndex: 1000,
               width: 340,
+              // Fixed 340px overflows off the left edge of narrow phones
+              // (e.g. 320-360px viewports) since this panel is anchored to
+              // the bell icon near the screen's right edge, not centered —
+              // cap it to the viewport minus the header's side padding so
+              // it always stays fully on-screen and readable.
+              maxWidth: 'calc(100vw - 32px)',
               maxHeight: 420,
               overflowY: 'auto',
               background: 'var(--surface)',
