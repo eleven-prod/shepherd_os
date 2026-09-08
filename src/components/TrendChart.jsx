@@ -5,7 +5,7 @@ export default function TrendChart({ points, color = 'var(--primary)', valueForm
   return (
     <div style={{ width: '100%', minWidth: 0 }}>
       <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={points} margin={{ top: 6, right: 10, bottom: 0, left: -20 }}>
+      <LineChart data={points} margin={{ top: 6, right: 10, bottom: 0, left: 0 }}>
         <CartesianGrid stroke="var(--line)" vertical={false} />
         <XAxis
           dataKey="label"
@@ -18,7 +18,7 @@ export default function TrendChart({ points, color = 'var(--primary)', valueForm
           axisLine={false}
           tickLine={false}
           tickFormatter={valueFormatter}
-          width={40}
+          width={56}
         />
         <Tooltip
           formatter={(v) => (valueFormatter ? valueFormatter(v) : v)}
