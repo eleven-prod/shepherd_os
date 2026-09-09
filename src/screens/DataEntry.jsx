@@ -19,8 +19,8 @@ import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRec
 // should be a single current count, unlike Attendance where multiple
 // weeks legitimately do add up to a monthly total.
 const DEMOGRAPHIC_CATEGORIES = [
-  ['attendance', 'Sunday Service Attendance'],
-  ['firstTimers', 'SSA First Timers'],
+  ['attendance', 'Worship Service Attendance'],
+  ['firstTimers', 'WSA First Timers'],
 ]
 const DEMOGRAPHICS = [
   ['Men', 'Men'],
