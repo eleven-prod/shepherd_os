@@ -47,19 +47,13 @@ export default function Sidebar({ collapsed }) {
         display: 'flex',
         flexDirection: 'column',
         flexShrink: 0,
-        // minHeight instead of a hard height:100vh — on a short window (or
-        // once more nav items than usual all show at once), a fixed height
-        // forced nav's own overflowY:auto to kick in, scrolling the list
-        // internally and burying earlier items above whatever the nav
-        // happened to be scrolled to, with the profile/Sign out footer
-        // stuck at that same scroll position instead of the real bottom.
-        // minHeight lets the whole sidebar grow taller than the viewport
-        // on a short window instead, so every item is always reachable by
-        // the ordinary page scroll — while position:sticky (unchanged)
-        // keeps it pinned in place as that main content scrolls, exactly
-        // like before, for any window tall enough to fit everything (the
-        // normal case).
-        minHeight: '100vh',
+        // Fixed to exactly the viewport height and pinned there (sticky
+        // top:0) — the sidebar itself never scrolls or grows taller than
+        // the screen. If the nav list has more items than fit, THAT
+        // scrolls on its own (overflowY:auto below), not the sidebar as a
+        // whole; the logo header above and the profile/Sign out footer
+        // below stay put either way.
+        height: '100vh',
         position: 'sticky',
         top: 0,
       }}
@@ -84,7 +78,7 @@ export default function Sidebar({ collapsed }) {
         )}
       </div>
       <hr style={{ border: 'none', borderTop: `1px solid ${SIDEBAR_LINE}`, margin: '4px 0' }} />
-      <nav style={{ flex: 1, padding: '8px 0' }}>
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
         {items.map((item) => (
           <NavLink
             key={item.to}
