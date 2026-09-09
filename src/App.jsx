@@ -79,7 +79,7 @@ function AppShell() {
   const canAccessDataEntry = canView('data_entry')
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div style={{ display: 'flex', minHeight: '100vh' }}>
       {!mobile && <Sidebar collapsed={collapsed} />}
       {/* width:0 alongside flex:1 + minWidth:0 is a defensive addition for
           iOS Safari: some WebKit versions don't fully constrain a flex
@@ -88,8 +88,18 @@ function AppShell() {
           a chart) silently push this column — and everything after it —
           wider than the viewport. width:0 with flex-grow:1 forces the
           flex-basis to 0 so the final size comes purely from the
-          available space, not from content. */}
-      <div style={{ flex: 1, minWidth: 0, width: 0, display: 'flex', flexDirection: 'column' }}>
+          available space, not from content.
+          overflowX:hidden lives HERE (on the content column) rather than
+          on the outer row above — putting it on the row broke the
+          sidebar's position:sticky, because setting overflow-x on an
+          element forces its overflow-y to compute as auto too (a real
+          CSS rule: one axis can't stay "visible" once the other isn't),
+          silently turning the sidebar's own parent into a scroll
+          container and breaking what "nearest scrolling ancestor" sticky
+          positioning resolves against. Scoped to just this column, it
+          clips the same overflow without ever becoming an ancestor of
+          the sidebar. */}
+      <div style={{ flex: 1, minWidth: 0, width: 0, maxWidth: '100vw', overflowX: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: mobile ? '12px 16px 0' : '16px 24px 0' }}>
           {mobile && (
             // Sign Out normally lives in the sidebar, which is hidden on
