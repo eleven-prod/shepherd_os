@@ -262,7 +262,7 @@ button {
 
 /* Same reasoning as .kpi-row above, for card rows elsewhere that don't
    need the KPI-specific styling — e.g. the Membership screen's
-   Category 1/2/Rate cards and its Sunday Service Attendance pair. Forced
+   Category 1/2/Rate cards and its Worship Service Attendance pair. Forced
    full-width single-column stacking turned each card into a long, thin
    rectangle rather than something that reads as a real "card" — 2 columns
    gives each one enough width to look proportioned instead of squeezed
