@@ -2,7 +2,7 @@ import { ComposedChart, Bar, Line, LabelList, XAxis, YAxis, CartesianGrid, Toolt
 
 /**
  * Month-by-month grouped bar comparison of two metrics — e.g. Category 2
- * vs Sunday Service Attendance — with a PYA reference line shown for only
+ * vs Worship Service Attendance — with a PYA reference line shown for only
  * ONE of the two series (the other is actual-only, no PYA of its own in
  * this particular comparison).
  *
