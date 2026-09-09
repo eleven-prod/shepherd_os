@@ -18,7 +18,7 @@ export default function Financial() {
   const growthTarget = givingPya * 1.3
   const remainingNeeded = growthTarget - kpi.actual
 
-  // Same convention as Sunday Service Attendance's target on the
+  // Same convention as Worship Service Attendance's target on the
   // Membership screen: 60% of Category 2's live (Admin-editable) Actual
   // value, not a fixed PYA-based figure — so it updates automatically if
   // Category 2 changes.
