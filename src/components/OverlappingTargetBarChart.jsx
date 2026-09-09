@@ -6,20 +6,20 @@ const TARGET_PASSED_COLOR = '#00c781'
 const TARGET_MISSED_COLOR = '#ff4040'
 
 /**
- * "SSA bar inside Category 2 bar": a genuinely STACKED bar, not two
+ * "WSA bar inside Category 2 bar": a genuinely STACKED bar, not two
  * independent bars — Recharts groups independent (non-stacked) Bar
  * series side-by-side no matter what width you give them, so true
  * visual nesting has to be built as a stack instead:
- *   - bottom segment ("front") = SSA's actual value, colored by whether
+ *   - bottom segment ("front") = WSA's actual value, colored by whether
  *     it passed the target (green) or missed it (red)
- *   - top segment ("remainder") = Category 2's value MINUS SSA's value —
- *     the "extra height" of Category 2 above SSA, shown in gray
- * Combined stack height = Category 2's real total, with SSA's own
- * portion clearly visible at the bottom in its own color. If SSA's value
+ *   - top segment ("remainder") = Category 2's value MINUS WSA's value —
+ *     the "extra height" of Category 2 above WSA, shown in gray
+ * Combined stack height = Category 2's real total, with WSA's own
+ * portion clearly visible at the bottom in its own color. If WSA's value
  * exceeds Category 2's, there's no remainder — the whole bar is just the
- * colored SSA segment.
+ * colored WSA segment.
  *
- * IMPORTANT: `pyaValue` (SSA's own real historical PYA) and `target`
+ * IMPORTANT: `pyaValue` (WSA's own real historical PYA) and `target`
  * (the pass/fail threshold, e.g. 60% of Category 2) are genuinely
  * different numbers, not the same figure shown two ways — the leading
  * blue bar shows `pyaValue`, while the dashed reference line and every
@@ -31,7 +31,7 @@ export default function OverlappingTargetBarChart({
   backgroundLabel,
   target,
   pyaValue,
-  pyaBarLabel = 'SSA PYA',
+  pyaBarLabel = 'WSA PYA',
   valueFormatter = (v) => Math.round(v).toString(),
   height = 300,
 }) {
@@ -88,7 +88,7 @@ export default function OverlappingTargetBarChart({
           // can't be cut off regardless of container width.
           label={{ value: `Target: ${valueFormatter(target)}`, position: 'insideTopRight', fontSize: 11, fill: 'var(--ink-muted)' }}
         />
-        {/* Bottom segment — SSA's real value, colored by target status
+        {/* Bottom segment — WSA's real value, colored by target status
             (or blue for the leading PYA bar). Drawn first in the stack. */}
         <Bar dataKey="front" name="Actual" stackId="ssaStack" barSize={40} radius={[0, 0, 0, 0]} isAnimationActive={false}>
           {data.map((entry, i) => (
@@ -96,7 +96,7 @@ export default function OverlappingTargetBarChart({
           ))}
           <LabelList dataKey="front" content={(props) => renderBarLabel(props, data[props.index], valueFormatter, pyaBarLabel)} />
         </Bar>
-        {/* Top segment — the rest of Category 2's height above SSA,
+        {/* Top segment — the rest of Category 2's height above WSA,
             stacked directly on top so the combined bar reaches Category
             2's real total. */}
         <Bar dataKey="remainder" name="Category 2 (remainder)" stackId="ssaStack" fill={CATEGORY2_COLOR} barSize={40} radius={[3, 3, 0, 0]} isAnimationActive={false} />
@@ -116,7 +116,7 @@ function renderBarLabel(props, row, valueFormatter, pyaBarLabel) {
   const cx = x + width / 2
   if (row.isPyaBar) {
     // Break the label into short words so each line is narrow enough
-    // for a 40px bar — "SSA PYA" as one line was still wider than the
+    // for a 40px bar — "WSA PYA" as one line was still wider than the
     // bar itself even at a small font size.
     const words = pyaBarLabel.split(' ')
     return (
