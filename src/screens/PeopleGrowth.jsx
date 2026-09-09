@@ -53,12 +53,12 @@ export default function PeopleGrowth() {
       <SectionBlock title="Membership" subtitle="Category 2 is a subset of Category 1 — PYA is each category's own benchmark, not a third category">
         <div className="two-col">
           <ParentSubsetPanel
-            parentLabel="Category 1 ( SSAM+LGAM+ SSAM/LGAM)"
+            parentLabel="Category 1 ( WSAM+LGAM+ WSAM/LGAM)"
             parentActual={totalMembers}
             parentPya={totalMembersPya}
             parentMonths={monthlySeries?.total?.membership?.months}
             parentDemographics={cat1Demographics}
-            subsetLabel="Category 2 ( SSAM+ SSAM/LGAM)"
+            subsetLabel="Category 2 ( WSAM+ WSAM/LGAM)"
             subsetActual={activeMembers}
             subsetPya={activeMembersPya}
             subsetMonths={monthlySeries?.total?.activeMembership?.months}
@@ -84,20 +84,20 @@ export default function PeopleGrowth() {
         </div>
       </SectionBlock>
 
-      {/* --- Sunday Service Attendance (with PYA + monthly trend) vs Category 2 (actual only, for reference) --- */}
-      <SectionBlock title="Sunday Service Attendance" subtitle="Overlapping against Category 2, colored by whether that month passed its own target">
+      {/* --- Worship Service Attendance (with PYA + monthly trend) vs Category 2 (actual only, for reference) --- */}
+      <SectionBlock title="Worship Service Attendance" subtitle="Overlapping against Category 2, colored by whether that month passed its own target">
         <div className="grid two-up-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', marginBottom: 16 }}>
           <div className="card" style={{ minWidth: 0 }}>
             <div style={{ display: 'flex' }}>
               <div className="label" style={{ flex: 1 }}>
-                Sunday Service Attendance
+                Worship Service Attendance
               </div>
               <StatusBadge status={attendanceKpi.status} compact />
             </div>
             <PyaGrowth pya={attendanceKpi.target} actual={attendanceKpi.actual} formatter={(v) => v.toFixed(0)} />
           </div>
           <div className="card" style={{ minWidth: 0 }}>
-            <div className="label">Category 2 ( SSAM+ SSAM/LGAM)</div>
+            <div className="label">Category 2 ( WSAM+ WSAM/LGAM)</div>
             <div className="stat-large" style={{ marginTop: 8 }}>
               {commas(activeMembers)}
             </div>
@@ -125,7 +125,7 @@ export default function PeopleGrowth() {
           backgroundLabel="Category 2"
           target={(activeMembers || 0) * 0.6}
           pyaValue={monthlySeries?.total?.attendance?.pya || 0}
-          pyaBarLabel="SSA PYA"
+          pyaBarLabel="WSA PYA"
           valueFormatter={(v) => commas(Math.round(v))}
         />
         <div className="caption" style={{ marginTop: 8 }}>
@@ -325,7 +325,7 @@ export default function PeopleGrowth() {
 
 function TrendsGrid({ series }) {
   const charts = [
-    ['attendance', 'Sunday Service Attendance', (v) => v.toFixed(0)],
+    ['attendance', 'Worship Service Attendance', (v) => v.toFixed(0)],
     ['firstTimers', 'First Timers', commas],
     ['totalWorkers', 'Workers', commas],
   ]
