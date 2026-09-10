@@ -4,7 +4,7 @@ import SectionHeader from '../components/SectionHeader'
 import { sheetInputStyle } from '../components/FormSheet'
 import { useAppData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
-import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRecentSubmissions } from '../data/api'
+import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRecentSubmissions, subscribeToRecentSubmissions } from '../data/api'
 
 // 2 categories get a full demographic breakdown (Men/Women/Young Adult/
 // KKB/Children) instead of one flat number — each demographic is its
@@ -115,6 +115,12 @@ export default function DataEntry() {
   const YEAR_OPTIONS = []
   for (let y = today.getFullYear(); y >= 2025; y--) YEAR_OPTIONS.push(y)
 
+  // Bumped by any card's own successful save — RecentSubmissions refetches
+  // whenever this changes, so THIS tab's own save shows up immediately
+  // without waiting on (or depending on) the realtime subscription.
+  const [activityVersion, setActivityVersion] = useState(0)
+  const bumpActivity = () => setActivityVersion((v) => v + 1)
+
   return (
     <div className="scroll-page">
       <SectionHeader
@@ -162,18 +168,18 @@ export default function DataEntry() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {churches.map((church) => (
             <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} />
-              <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} />
+              <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} />
+              <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} />
             </div>
           ))}
         </div>
-        <RecentSubmissions />
+        <RecentSubmissions refreshKey={activityVersion} />
       </div>
     </div>
   )
 }
 
-function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
+function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
   const { role } = useAuth()
   const isAdmin = ADMIN_ROLES.includes(role)
 
@@ -240,6 +246,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
         await recomputeMonthlyActual(areaName, key, selectedWeek)
       }
       await loadEntries()
+      onSaved?.()
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2000)
     } catch (err) {
@@ -486,7 +493,7 @@ const RECENT_SUBMISSIONS_SHOWN = 10
 // which church, when it happened, and who submitted it — deduplicated
 // to one line per actual submission, and height-capped with its own
 // scroll so it can't outgrow the entry cards beside it.
-function RecentSubmissions() {
+function RecentSubmissions({ refreshKey }) {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
 
@@ -497,6 +504,24 @@ function RecentSubmissions() {
     fetchRecentSubmissions(80)
       .then(setRows)
       .catch((err) => setError(err.message))
+    // refreshKey changes the instant any card in THIS tab saves
+    // successfully (see DataEntry's bumpActivity/onSaved) — refetching
+    // here means the person doesn't have to wait for the realtime
+    // round-trip below just to see their own save show up.
+  }, [refreshKey])
+
+  useEffect(() => {
+    // Live updates for everyone ELSE'S saves — any INSERT/UPDATE on
+    // weekly_entries from any user's session refetches this feed, so it
+    // updates on its own without a page reload. Falls back to silence
+    // (not an error) if the project hasn't enabled realtime replication
+    // for this table yet — see subscribeToRecentSubmissions's comment.
+    const unsubscribe = subscribeToRecentSubmissions(() => {
+      fetchRecentSubmissions(80)
+        .then(setRows)
+        .catch((err) => setError(err.message))
+    })
+    return unsubscribe
   }, [])
 
   if (error) return null // quietly skip the log rather than blocking the whole page over it
@@ -537,7 +562,7 @@ function RecentSubmissions() {
   )
 }
 
-function ChurchCard({ church, weeks, year, monthIndex }) {
+function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
   const { areaName, isMainChurch } = church
   const { role } = useAuth()
   const isAdmin = ADMIN_ROLES.includes(role)
@@ -602,6 +627,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
         await recomputeMonthlyActual(areaName, key, selectedWeek)
       }
       await loadEntries()
+      onSaved?.()
       setSavedFlash(true)
       setTimeout(() => setSavedFlash(false), 2000)
     } catch (err) {
