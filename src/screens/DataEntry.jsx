@@ -803,7 +803,7 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
                         pattern as each demographic category's Total line. */}
                     {key === 'offerings' && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                        <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total (Tithes + Offering)</div>
+                        <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total TO</div>
                         <div style={{ width: 128, textAlign: 'right', paddingRight: 10, fontWeight: 700, fontSize: 14 }}>
                           {(Number(form.tithes) || 0) + (Number(form.offerings) || 0)}
                         </div>
@@ -960,10 +960,10 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
                             </td>
                           </tr>
                           {/* Combined Tithes + Offering row, mirroring the
-                              form's "Total (Tithes + Offering)" line above. */}
+                              form's "Total TO" line above. */}
                           {key === 'offerings' && (
                             <tr style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-muted)' }}>
-                              <td style={{ padding: '5px 6px', fontWeight: 700 }}>Total (Tithes + Offering)</td>
+                              <td style={{ padding: '5px 6px', fontWeight: 700 }}>Total TO</td>
                               {weeks.map((w) => {
                                 const tithesEntry = entries.find((e) => e.field_key === 'tithes' && e.week_start === w)
                                 const offeringEntry = entries.find((e) => e.field_key === 'offerings' && e.week_start === w)
