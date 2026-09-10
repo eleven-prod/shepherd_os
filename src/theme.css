@@ -45,6 +45,22 @@
   box-sizing: border-box;
 }
 
+/* Number inputs' native up/down spinner sits inside the input's own
+   right padding, visually pushing a right-aligned digit left of where
+   it should sit — most noticeable when a plain-text total sits right
+   next to a same-width number input and their values don't line up.
+   Hiding the spinner lets the digits land flush against the padding
+   on both, so a "0" default value lines up with the row's Total. */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
 html,
 body,
 #root {
