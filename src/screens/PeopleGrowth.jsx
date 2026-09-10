@@ -8,26 +8,73 @@ import DonutChart from '../components/DonutChart'
 import OverlappingTargetBarChart from '../components/OverlappingTargetBarChart'
 import TrendChart from '../components/TrendChart'
 import { LoadingSpinner } from '../components/Spinner'
-import { commas } from '../data/api'
+import { commas, statusFromAchievement, achievementPct } from '../data/api'
 import { useAppData } from '../context/DataContext'
 import { usePeriod } from '../context/PeriodContext'
+import { usePeriodMode } from '../components/PeriodModeBar'
 
 export default function PeopleGrowth() {
   const { data } = useAppData()
   const { monthlySeries, monthlySeriesLoading, monthlySeriesError, refetchMonthlySeries } = usePeriod()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = usePeriodMode()
   const [trendArea, setTrendArea] = useState(null)
   const {
-    totalMembers,
+    totalMembers: liveTotalMembers,
     totalMembersPya,
-    activeMembers,
+    activeMembers: liveActiveMembers,
     activeMembersPya,
-    attendanceKpi,
-    firstTimersKpi,
+    attendanceKpi: liveAttendanceKpi,
+    firstTimersKpi: liveFirstTimersKpi,
     firstTimerFunnel,
-    areaPeopleStats,
+    areaPeopleStats: liveAreaPeopleStats,
     cat1Demographics,
     cat2Demographics,
   } = data
+
+  // In Historical mode, swap the live "this month" headline figures
+  // (Category 1/2, Attendance, First Timers, and the By Area table) for
+  // the selected past period's real figures from the POR import — same
+  // data Reports already shows. The trend charts below already always
+  // show the full historical series regardless of mode, so those are
+  // left as-is; demographic breakdowns and the First Timers funnel have
+  // no historical equivalent in the POR import, so those stay live-only.
+  const totalMembers = isHistorical ? metrics?.total?.membership?.actual ?? 0 : liveTotalMembers
+  const totalMembersPyaValue = isHistorical ? metrics?.total?.membership?.target ?? 0 : totalMembersPya
+  const activeMembers = isHistorical ? metrics?.total?.activeMembership?.actual ?? 0 : liveActiveMembers
+  const activeMembersPyaValue = isHistorical ? metrics?.total?.activeMembership?.target ?? 0 : activeMembersPya
+
+  const attendanceKpi = isHistorical
+    ? {
+        actual: metrics?.total?.attendance?.actual ?? 0,
+        target: metrics?.total?.attendance?.target ?? 0,
+        status: statusFromAchievement(achievementPct(metrics?.total?.attendance?.actual ?? 0, metrics?.total?.attendance?.target ?? 0)),
+      }
+    : liveAttendanceKpi
+  const firstTimersKpi = isHistorical
+    ? {
+        actual: metrics?.total?.firstTimers?.actual ?? 0,
+        target: metrics?.total?.firstTimers?.target ?? 0,
+        status: statusFromAchievement(achievementPct(metrics?.total?.firstTimers?.actual ?? 0, metrics?.total?.firstTimers?.target ?? 0)),
+      }
+    : liveFirstTimersKpi
+
+  const areaPeopleStats = isHistorical
+    ? (metrics?.byArea || []).map((a) => ({
+        id: a.areaName,
+        areaName: a.areaName,
+        isMainChurch: a.isMainChurch,
+        membershipActual: a.membership.actual,
+        membershipTarget: a.membership.target,
+        membershipStatus: statusFromAchievement(achievementPct(a.membership.actual, a.membership.target)),
+        attendanceActual: a.attendance.actual,
+        attendanceTarget: a.attendance.target,
+        attendanceStatus: statusFromAchievement(achievementPct(a.attendance.actual, a.attendance.target)),
+        firstTimersActual: a.firstTimers.actual,
+        firstTimersTarget: a.firstTimers.target,
+        firstTimersStatus: statusFromAchievement(achievementPct(a.firstTimers.actual, a.firstTimers.target)),
+        totalWorkers: a.totalWorkers.actual,
+      }))
+    : liveAreaPeopleStats
 
   const maxCount = firstTimerFunnel[0].count
   const funnelPalette = ['#3c76f1', '#ffbb38', '#6e8fa3', '#8e5b45', '#366ad9']
@@ -35,7 +82,10 @@ export default function PeopleGrowth() {
   // Church-wide Workers total isn't tracked as its own figure — it's
   // computed by summing the per-area Workers numbers (editable in Admin
   // Console → Area People) rather than needing a separate database field.
-  const workers = (areaPeopleStats || []).reduce(
+  // Full-time/part-time/volunteer breakdown isn't tracked in the POR
+  // import (only a per-area total) — always summed from the live,
+  // Admin-editable figures regardless of mode.
+  const workers = (liveAreaPeopleStats || []).reduce(
     (sum, a) => ({
       fullTime: sum.fullTime + (a.fullTimeWorkers || 0),
       partTime: sum.partTime + (a.partTimeWorkers || 0),
@@ -48,6 +98,23 @@ export default function PeopleGrowth() {
   return (
     <div className="scroll-page">
       <SectionHeader title="Membership" subtitle="Category 1, Category 2, Attendance, First Timers, and Workers" />
+      {periodBar}
+
+      {isHistorical && metricsLoading && <div className="body-muted" style={{ marginBottom: 16 }}>Loading figures for this period...</div>}
+      {isHistorical && metricsError && (
+        <div className="card" style={{ textAlign: 'center', padding: 24, marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Couldn't load this period</div>
+          <div className="body-muted" style={{ marginBottom: 14 }}>
+            {metricsError}
+          </div>
+          <button
+            onClick={refetchMetrics}
+            style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {/* --- Category 1 / Category 2 / Rate --- */}
       <SectionBlock title="Membership" subtitle="Category 2 is a subset of Category 1 — PYA is each category's own benchmark, not a third category">
@@ -55,12 +122,12 @@ export default function PeopleGrowth() {
           <ParentSubsetPanel
             parentLabel="Category 1 ( WSAM+LGAM+ WSAM/LGAM)"
             parentActual={totalMembers}
-            parentPya={totalMembersPya}
+            parentPya={totalMembersPyaValue}
             parentMonths={monthlySeries?.total?.membership?.months}
             parentDemographics={cat1Demographics}
             subsetLabel="Category 2 ( WSAM+ WSAM/LGAM)"
             subsetActual={activeMembers}
-            subsetPya={activeMembersPya}
+            subsetPya={activeMembersPyaValue}
             subsetMonths={monthlySeries?.total?.activeMembership?.months}
             subsetDemographics={cat2Demographics}
             rateLabel="Rate"
@@ -311,7 +378,7 @@ export default function PeopleGrowth() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ fontSize: 13.5, fontWeight: 600 }}>{a.totalWorkers}</div>
-                    <div className="caption">{a.volunteerWorkers} volunteer</div>
+                    {!isHistorical && <div className="caption">{a.volunteerWorkers} volunteer</div>}
                   </td>
                 </tr>
               ))}
