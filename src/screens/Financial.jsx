@@ -5,14 +5,47 @@ import PyaGrowth from '../components/PyaGrowth'
 import PyaBarThenLineChart from '../components/PyaBarThenLineChart'
 import PyaBarChart from '../components/PyaBarChart'
 import PyaTargetActualBars from '../components/PyaTargetActualBars'
-import { peso, commas } from '../data/api'
+import { peso, commas, statusFromAchievement, achievementPct } from '../data/api'
 import { useAppData } from '../context/DataContext'
-import { usePeriod } from '../context/PeriodContext'
+import { usePeriodMode } from '../components/PeriodModeBar'
 
 export default function Financial() {
   const { data } = useAppData()
-  const { financialKpi: kpi, numberOfTithersKpi, financialCategories, areaFinancialStats, activeMembers } = data
-  const { monthlySeries } = usePeriod()
+  const { financialKpi: liveKpi, numberOfTithersKpi: liveNumberOfTithersKpi, financialCategories, areaFinancialStats: liveAreaFinancialStats, activeMembers } = data
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries } = usePeriodMode()
+
+  // In Historical mode, swap the live "This Month" figures (from the
+  // kpis table, kept current by Data Entry) for the selected past
+  // period's real figures from the POR import — same data Reports
+  // already shows, same {actual, target} shape, just without a
+  // pre-computed status, so that's derived here to match.
+  const kpi = isHistorical
+    ? {
+        actual: metrics?.total?.totalGiving?.actual ?? 0,
+        target: metrics?.total?.totalGiving?.target ?? 0,
+        status: statusFromAchievement(achievementPct(metrics?.total?.totalGiving?.actual ?? 0, metrics?.total?.totalGiving?.target ?? 0)),
+      }
+    : liveKpi
+  const numberOfTithersKpi = isHistorical
+    ? liveNumberOfTithersKpi && {
+        actual: metrics?.total?.numberOfTithers?.actual ?? 0,
+        target: metrics?.total?.numberOfTithers?.target ?? 0,
+        status: statusFromAchievement(achievementPct(metrics?.total?.numberOfTithers?.actual ?? 0, metrics?.total?.numberOfTithers?.target ?? 0)),
+      }
+    : liveNumberOfTithersKpi
+  const areaFinancialStats = isHistorical
+    ? metrics?.byArea?.map((a) => ({
+        id: a.areaName,
+        areaName: a.areaName,
+        isMainChurch: a.isMainChurch,
+        tithesActual: a.tithes.actual,
+        offeringsActual: a.offerings.actual,
+        missionOfferingActual: a.missionOffering.actual,
+        pledgesActual: a.pledges.actual,
+        totalGivingActual: a.totalGiving.actual,
+        totalGivingStatus: statusFromAchievement(achievementPct(a.totalGiving.actual, a.totalGiving.target)),
+      }))
+    : liveAreaFinancialStats
 
   const givingPya = monthlySeries?.total?.totalGiving?.pya || 0
   const growthTarget = givingPya * 1.3
@@ -27,6 +60,23 @@ export default function Financial() {
   return (
     <div className="scroll-page">
       <SectionHeader title="Financial Status" subtitle="Monitoring only — not a replacement for full accounting" />
+      {periodBar}
+
+      {isHistorical && metricsLoading && <div className="body-muted" style={{ marginBottom: 16 }}>Loading figures for this period...</div>}
+      {isHistorical && metricsError && (
+        <div className="card" style={{ textAlign: 'center', padding: 24, marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>Couldn't load this period</div>
+          <div className="body-muted" style={{ marginBottom: 14 }}>
+            {metricsError}
+          </div>
+          <button
+            onClick={refetchMetrics}
+            style={{ padding: '9px 16px', borderRadius: 8, border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       <div className="card">
         <div style={{ display: 'flex', gap: 20, alignItems: 'stretch', flexWrap: 'wrap' }}>
