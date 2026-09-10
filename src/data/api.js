@@ -835,6 +835,54 @@ function monthRange(monthStart) {
   return { startStr: fmt(start), endStr: fmt(end) }
 }
 
+// Number of Sundays in the same calendar month as monthStart — used to
+// turn a monthly attendance SUM into a weekly AVERAGE for the "Average
+// Weekly Attendance" KPI, matching how Data Entry's own week picker
+// (sundaysInMonth in DataEntry.jsx) counts weeks for that month.
+function sundayCountInMonth(monthStart) {
+  const start = new Date(monthStart)
+  const d = new Date(start.getFullYear(), start.getMonth(), 1)
+  let count = 0
+  while (d.getMonth() === start.getMonth()) {
+    if (d.getDay() === 0) count++
+    d.setDate(d.getDate() + 1)
+  }
+  return count
+}
+
+// Some KPIs on Dashboard/KPI Center are named slightly differently than
+// the Data Entry field that feeds them (or have a legacy fallback name —
+// see fetchAppData's financialKpi) — update every matching name so
+// either spelling stays in sync.
+async function updateKpiActualByName(names, actual) {
+  const { error } = await supabase.from('kpis').update({ actual }).in('name', names)
+  if (error) throw new Error(error.message)
+}
+
+// Dashboard/KPI Center's headline numbers live in a separate `kpis`
+// table (target/actual/trend) that used to be updated ONLY by hand via
+// Admin Console's "Edit KPI" form — Data Entry saves never touched it,
+// so those cards silently went stale the moment someone relied on
+// weekly entries instead of manually retyping the KPI. This keeps the
+// subset of KPIs that DO have a clear Data Entry source in sync,
+// church-wide, the same way recomputeChurchWideTotals already does for
+// Category 1/2 membership. Life Group Headcount and Geographic Coverage
+// aren't derived from any Data Entry field, so they're left alone —
+// still Admin Console's to maintain.
+async function syncKpiActual(fieldKey, monthStart) {
+  if (fieldKey === 'numberOfTithers') {
+    const { data: areas, error } = await supabase.from('area_people_stats').select('number_of_tithers_actual')
+    if (error) throw new Error(error.message)
+    const total = areas.reduce((sum, a) => sum + Number(a.number_of_tithers_actual), 0)
+    await updateKpiActualByName(['Number of Tithers'], total)
+  } else if (fieldKey === 'tithes' || fieldKey === 'offerings') {
+    const { data: areas, error } = await supabase.from('area_financial_stats').select('tithes_actual, offerings_actual')
+    if (error) throw new Error(error.message)
+    const total = areas.reduce((sum, a) => sum + Number(a.tithes_actual) + Number(a.offerings_actual), 0)
+    await updateKpiActualByName(['Total Tithes and Offering', 'Overall Giving'], total)
+  }
+}
+
 /** Fetches every weekly entry for one church within one calendar month, across all 10 fields. */
 export async function fetchWeeklyEntries(areaName, monthStart) {
   requireSupabase()
@@ -969,6 +1017,28 @@ export async function recomputeMonthlyActual(areaName, fieldKey, monthStart) {
     if (group.parentColumn === 'membership_actual' || group.parentColumn === 'active_membership_actual') {
       await recomputeChurchWideTotals()
     }
+
+    // "Average Weekly Attendance" and "First Timers" on Dashboard/KPI
+    // Center track WORSHIP SERVICE attendance specifically — checking
+    // mapping.table here (not just parentColumn) matters because Life
+    // Group attendance/first-timers land in the same-named columns on a
+    // different table (life_groups) and should NOT feed these KPIs.
+    if (mapping.table === 'area_people_stats' && group.parentColumn === 'attendance_actual') {
+      const { data: areas, error } = await supabase.from('area_people_stats').select('attendance_actual')
+      if (error) throw new Error(error.message)
+      const total = areas.reduce((sum, a) => sum + Number(a.attendance_actual), 0)
+      const weeks = sundayCountInMonth(monthStart)
+      await updateKpiActualByName(['Average Weekly Attendance'], weeks > 0 ? total / weeks : 0)
+    } else if (mapping.table === 'area_people_stats' && group.parentColumn === 'first_timers_actual') {
+      const { data: areas, error } = await supabase.from('area_people_stats').select('first_timers_actual')
+      if (error) throw new Error(error.message)
+      const total = areas.reduce((sum, a) => sum + Number(a.first_timers_actual), 0)
+      await updateKpiActualByName(['First Timers'], total)
+    }
+  } else {
+    // Non-demographic fields (Number of Tithers, Tithes, Offering, ...)
+    // don't go through the group branch above — handled separately here.
+    await syncKpiActual(fieldKey, monthStart)
   }
 
   return total
