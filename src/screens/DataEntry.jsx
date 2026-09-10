@@ -305,13 +305,13 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
             </div>
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, opacity: locked ? 0.5 : 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: locked ? 0.5 : 1 }}>
             {LG_CATEGORIES.map(([prefix, label, demographics]) => {
               const categoryTotal = demographics.reduce((sum, [dKey]) => sum + (Number(form[`${prefix}${dKey}`]) || 0), 0)
               return (
                 <div key={prefix}>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{label}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{label}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 10 }}>
                     {demographics.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{dLabel}</div>
@@ -321,14 +321,14 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                           value={form[`${prefix}${dKey}`]}
                           onChange={set(`${prefix}${dKey}`)}
                           disabled={locked}
-                          style={{ ...sheetInputStyle, width: 84 }}
+                          style={{ ...sheetInputStyle, width: 84, padding: '9px 8px', textAlign: 'right' }}
                           placeholder="0"
                         />
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
                       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total</div>
-                      <div style={{ width: 84, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
+                      <div style={{ width: 84, textAlign: 'right', paddingRight: 8, fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
                 </div>
@@ -667,50 +667,64 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
             </div>
           ) : null}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, opacity: locked ? 0.5 : 1 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, opacity: locked ? 0.5 : 1 }}>
             {DEMOGRAPHIC_CATEGORIES.map(([prefix, label]) => {
               const categoryTotal = DEMOGRAPHICS.reduce((sum, [dKey]) => sum + (Number(form[`${prefix}${dKey}`]) || 0), 0)
               return (
                 <div key={prefix}>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>{label}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{label}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 10 }}>
                     {DEMOGRAPHICS.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{dLabel}</div>
+                        {/* Counts (attendance headcounts, ~0-999) fit comfortably
+                            in a narrow box — width:84 with tightened padding
+                            (11px 14px -> 9px 8px) reclaims horizontal room for
+                            the Weekly Progress table beside this form, and
+                            right-aligning digits reads more like a numeric
+                            column. Financial inputs below get their own wider
+                            style since a peso amount can run 6+ digits. */}
                         <input
                           type="number"
                           step={1}
                           value={form[`${prefix}${dKey}`]}
                           onChange={set(`${prefix}${dKey}`)}
                           disabled={locked}
-                          style={{ ...sheetInputStyle, width: 84 }}
+                          style={{ ...sheetInputStyle, width: 84, padding: '9px 8px', textAlign: 'right' }}
                           placeholder="0"
                         />
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
                       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total</div>
-                      <div style={{ width: 84, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
+                      <div style={{ width: 84, textAlign: 'right', paddingRight: 8, fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
                 </div>
               )
             })}
 
-            {SIMPLE_FIELDS.map(([key, label, kind]) => (
-              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{label}</div>
-                <input
-                  type="number"
-                  step={kind === 'financial' ? 'any' : 1}
-                  value={form[key]}
-                  onChange={set(key)}
-                  disabled={locked}
-                  style={{ ...sheetInputStyle, width: 84 }}
-                  placeholder="0"
-                />
-              </div>
-            ))}
+            {/* Financial/people fields get their own tighter gap (6 instead of
+                the 12 between category blocks above) and a wider input
+                (84px -> 128px) — tithes/offering can run into 6-figure peso
+                amounts, which clipped inside the narrower 84px box shared
+                with the small headcount fields. */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {SIMPLE_FIELDS.map(([key, label, kind]) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{label}</div>
+                  <input
+                    type="number"
+                    step={kind === 'financial' ? 'any' : 1}
+                    value={form[key]}
+                    onChange={set(key)}
+                    disabled={locked}
+                    style={{ ...sheetInputStyle, width: 128, padding: '9px 10px', textAlign: 'right' }}
+                    placeholder="0"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           {error && <div style={{ color: 'var(--status-critical)', fontSize: 13, marginTop: 10 }}>{error}</div>}
