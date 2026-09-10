@@ -17,10 +17,19 @@ export const MONTHS = [
   { key: '2026-08-01', label: 'August 2026' },
 ]
 
-// August wasn't yet reported at the time the source data was compiled —
-// flagged here so the UI can show a "not yet reported" note rather than
-// silently treating 0 as a real figure.
-export const UNREPORTED_MONTHS = new Set(['2026-08-01'])
+// August wasn't yet reported when the original Excel import was
+// compiled, so it was flagged here to keep placeholder zeros out of
+// Historical mode. Real August figures have since been backfilled into
+// por_monthly_values: Attendance, First Timers, Number of Tithers, and
+// Finances from actual Data Entry weekly submissions; Workers and Life
+// Group headcount (church-wide and per area) from the current
+// Admin-Console figures (a fair stand-in, since those rarely move
+// month to month); Category 1/2 Membership church-wide only, from the
+// PYA reference (917/781) — no source exists yet for a per-area
+// Category 1/2 split, so those 8 rows are still 0 for August. If that
+// starts looking wrong in the By Area Membership table, it needs a
+// real per-area figure supplied, not a code fix.
+export const UNREPORTED_MONTHS = new Set([])
 
 export const QUARTERS = [
   { key: 'Q1', label: 'Q1: Sep–Nov 2025', months: ['2025-09-01', '2025-10-01', '2025-11-01'] },
