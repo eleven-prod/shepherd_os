@@ -239,10 +239,29 @@ button {
   min-width: 0;
 }
 
+/* Mirror of .two-col-narrow with the fixed-width column on the LEFT
+   instead of the right — for a compact entry form next to a table that
+   wants as much of the row as it can get (Data Entry's per-church
+   cards: the form's inputs are all narrow/fixed-width now, so it never
+   needed 3/5 of the row the way .two-col's ratio gives it; the Weekly
+   Progress table needs that space far more, to fit Field + every week
+   column + Total without scrolling). */
+.two-col-form {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.two-col-form > * {
+  min-width: 0;
+}
+
 @media (max-width: 720px) {
   .two-col,
   .two-col-reverse,
-  .two-col-narrow {
+  .two-col-narrow,
+  .two-col-form {
     grid-template-columns: 1fr;
   }
 }
