@@ -428,23 +428,55 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
   )
 }
 
+// One save action in a ChurchCard/LifeGroupAreaCard writes one row per
+// FIELD (upsertWeeklyEntry is called once per field), so a single
+// submission of, say, the demographic attendance breakdown produces
+// ~15-20 near-identical rows a second or two apart — same church, same
+// submitter. Left ungrouped, that flooded this sidebar with repeats of
+// the same event and blew past any reasonable height. Collapse
+// consecutive rows that share a church and submitter and land within
+// a minute of each other into a single event before rendering.
+const SUBMISSION_BATCH_WINDOW_MS = 60_000
+
+function groupIntoSubmissionEvents(rows) {
+  const events = []
+  for (const r of rows) {
+    const t = new Date(r.updated_at).getTime()
+    const last = events[events.length - 1]
+    if (last && last.area_name === r.area_name && last.submitted_by === r.submitted_by && last.updated_at - t <= SUBMISSION_BATCH_WINDOW_MS) {
+      continue // part of the same batch already represented by `last` (rows arrive newest-first)
+    }
+    events.push({ id: r.id, area_name: r.area_name, submitted_by: r.submitted_by, submitted_by_name: r.submitted_by_name, updated_at: t })
+  }
+  return events
+}
+
+const RECENT_SUBMISSIONS_SHOWN = 10
+
 // Sidebar activity feed rather than a wide data table — now that this
 // panel lives in the narrow right column of the .two-col layout, a
 // 6-column table would just force horizontal scrolling inside a
 // sidebar. Per the request, this also drops the specific-input detail
 // (which field, what value) and keeps only what matters at a glance:
-// which church, when it happened, and who submitted it.
+// which church, when it happened, and who submitted it — deduplicated
+// to one line per actual submission, and height-capped with its own
+// scroll so it can't outgrow the entry cards beside it.
 function RecentSubmissions() {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetchRecentSubmissions(15)
+    // Fetch more raw rows than we'll display — grouping collapses many
+    // field-level rows into few events, so a small raw limit could
+    // leave fewer than RECENT_SUBMISSIONS_SHOWN events on screen.
+    fetchRecentSubmissions(80)
       .then(setRows)
       .catch((err) => setError(err.message))
   }, [])
 
   if (error) return null // quietly skip the log rather than blocking the whole page over it
+
+  const events = rows ? groupIntoSubmissionEvents(rows).slice(0, RECENT_SUBMISSIONS_SHOWN) : null
 
   return (
     <div className="card">
@@ -452,26 +484,26 @@ function RecentSubmissions() {
       <div className="caption" style={{ marginBottom: 12 }}>
         Every church's activity — visible to everyone, not just Admins.
       </div>
-      {!rows ? (
+      {!events ? (
         <div className="body-muted">Loading recent activity...</div>
-      ) : rows.length === 0 ? (
+      ) : events.length === 0 ? (
         <div className="body-muted">No submissions yet.</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {rows.map((r) => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 380, overflowY: 'auto' }}>
+          {events.map((e) => (
             <div
-              key={r.id}
+              key={e.id}
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 2,
-                padding: '10px 2px',
+                padding: '8px 2px',
                 borderTop: '1px solid var(--line)',
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 700 }}>{r.area_name}</div>
-              <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{r.submitted_by_name || 'Unknown'}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{new Date(r.updated_at).toLocaleString()}</div>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{e.area_name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{e.submitted_by_name || 'Unknown'}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{new Date(e.updated_at).toLocaleString()}</div>
             </div>
           ))}
         </div>
