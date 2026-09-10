@@ -148,6 +148,25 @@ export default function DataEntry() {
   const [activityVersion, setActivityVersion] = useState(0)
   const bumpActivity = () => setActivityVersion((v) => v + 1)
 
+  // Admin-only "view as" preview: pick one area and see this screen the
+  // way that area's coordinator actually sees it — just their own
+  // church, locked past the weekly deadline, no historical month
+  // browsing — instead of the admin's own unlocked, all-areas view.
+  // null means "not previewing", i.e. the normal admin view below.
+  const [previewAreaName, setPreviewAreaName] = useState(null)
+  const previewing = isAdmin && previewAreaName !== null
+  const visibleChurches = previewing ? churches.filter((c) => c.areaName === previewAreaName) : churches
+
+  // Coordinators don't get to browse history — jump back to the current
+  // month the moment a preview starts, and hand it back to the admin's
+  // last-viewed month when the preview ends.
+  const enterPreview = (name) => {
+    setPreviewAreaName(name)
+    setYear(today.getFullYear())
+    setMonthIndex(today.getMonth())
+  }
+  const exitPreview = () => setPreviewAreaName(null)
+
   return (
     <div className="scroll-page">
       <SectionHeader
@@ -155,33 +174,74 @@ export default function DataEntry() {
         subtitle="Enter each week's real numbers as they happen — the monthly total is the sum of everything entered this month."
       />
       {isAdmin && (
-        <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div className="label">Viewing</div>
-          <select value={monthIndex} onChange={(e) => setMonthIndex(Number(e.target.value))} style={{ ...sheetInputStyle, width: 'auto' }}>
-            {MONTH_NAMES.map((name, i) => (
-              <option key={i} value={i}>
-                {name}
+        <div className="card" style={{ marginBottom: 20, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+          <div className="label">View as</div>
+          <select
+            value={previewAreaName || ''}
+            onChange={(e) => (e.target.value ? enterPreview(e.target.value) : exitPreview())}
+            style={{ ...sheetInputStyle, width: 'auto' }}
+          >
+            <option value="">Admin (all areas)</option>
+            {churches.map((c) => (
+              <option key={c.areaName} value={c.areaName}>
+                {c.areaName}
               </option>
             ))}
           </select>
-          <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ ...sheetInputStyle, width: 'auto' }}>
-            {YEAR_OPTIONS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          {(year !== today.getFullYear() || monthIndex !== today.getMonth()) && (
-            <button
-              onClick={() => {
-                setYear(today.getFullYear())
-                setMonthIndex(today.getMonth())
-              }}
-              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
-            >
-              Back to current month
-            </button>
+          {!previewing && (
+            <>
+              <div className="label">Viewing</div>
+              <select value={monthIndex} onChange={(e) => setMonthIndex(Number(e.target.value))} style={{ ...sheetInputStyle, width: 'auto' }}>
+                {MONTH_NAMES.map((name, i) => (
+                  <option key={i} value={i}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} style={{ ...sheetInputStyle, width: 'auto' }}>
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              {(year !== today.getFullYear() || monthIndex !== today.getMonth()) && (
+                <button
+                  onClick={() => {
+                    setYear(today.getFullYear())
+                    setMonthIndex(today.getMonth())
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Back to current month
+                </button>
+              )}
+            </>
           )}
+        </div>
+      )}
+      {previewing && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            background: 'var(--status-attention-bg)',
+            border: '1px solid var(--status-attention)',
+          }}
+        >
+          <div style={{ fontSize: 13, flex: 1, minWidth: 0 }}>
+            Previewing <strong>{previewAreaName}</strong> as its coordinator sees it — locked past the weekly
+            deadline, current month only.
+          </div>
+          <button
+            onClick={exitPreview}
+            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Exit preview
+          </button>
         </div>
       )}
       {/* .two-col-narrow keeps the same main-content + right-panel idea
@@ -193,10 +253,10 @@ export default function DataEntry() {
           phones instead of squeezing beside them. */}
       <div className="two-col-narrow" style={{ marginTop: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-          {churches.map((church) => (
+          {visibleChurches.map((church) => (
             <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} />
-              <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} />
+              <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} previewMode={previewing} />
+              <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} previewMode={previewing} />
             </div>
           ))}
         </div>
@@ -206,9 +266,13 @@ export default function DataEntry() {
   )
 }
 
-function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
+function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved, previewMode }) {
   const { role } = useAuth()
-  const isAdmin = ADMIN_ROLES.includes(role)
+  // previewMode means an admin picked this area from the "View as"
+  // selector to see it the way that area's coordinator actually would —
+  // so treat this card as non-admin (locked past deadline, etc.) even
+  // though the real signed-in user is an admin.
+  const isAdmin = ADMIN_ROLES.includes(role) && !previewMode
 
   const LG_HETERO_DEMOGRAPHICS = [...DEMOGRAPHICS, ['Hetero', 'Hetero']]
   const LG_CATEGORIES = [
@@ -581,10 +645,12 @@ function RecentSubmissions({ refreshKey }) {
   )
 }
 
-function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
+function ChurchCard({ church, weeks, year, monthIndex, onSaved, previewMode }) {
   const { areaName, isMainChurch } = church
   const { role } = useAuth()
-  const isAdmin = ADMIN_ROLES.includes(role)
+  // See matching comment in LifeGroupAreaCard — previewMode simulates
+  // this area's coordinator view for an admin using "View as".
+  const isAdmin = ADMIN_ROLES.includes(role) && !previewMode
 
   const [selectedWeek, setSelectedWeek] = useState(weeks.find((w) => isWithinDeadline(w)) || weeks[weeks.length - 1])
 
