@@ -145,14 +145,14 @@ export default function DataEntry() {
           )}
         </div>
       )}
-      {/* .two-col is the established main-content + right-panel pattern
-          (see theme.css) — 3fr/2fr on desktop, collapsing to a single
-          stacked column below 720px so the Recent Submissions panel
-          moves below the entry cards on phones instead of squeezing
-          beside them. Recent Submissions lives in the second column so
-          it reads as a persistent side panel rather than sitting above
-          the actual data-entry work. */}
-      <div className="two-col" style={{ marginTop: 20 }}>
+      {/* .two-col-narrow keeps the same main-content + right-panel idea
+          as .two-col (see theme.css) but with a slim fixed-width (260px)
+          side column instead of a genuine 2/5 share of the row — Recent
+          Submissions is a short activity feed, not content that needs
+          to grow with the viewport. Collapses to a single stacked
+          column below 720px so it moves below the entry cards on
+          phones instead of squeezing beside them. */}
+      <div className="two-col-narrow" style={{ marginTop: 20 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {churches.map((church) => (
             <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
