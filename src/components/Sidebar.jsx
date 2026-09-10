@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { SignOutIcon } from './Icons'
 
 const SIDEBAR_BG = '#06183a' // Secondary-800, dark navy
 const SIDEBAR_LINE = 'rgba(255,255,255,0.1)'
@@ -136,6 +137,7 @@ export default function Sidebar({ collapsed }) {
         )}
         <button
           onClick={signOut}
+          title="Sign out"
           style={{
             width: '100%',
             padding: '8px 0',
@@ -143,12 +145,13 @@ export default function Sidebar({ collapsed }) {
             border: `1px solid ${SIDEBAR_LINE}`,
             background: 'rgba(255,255,255,0.06)',
             color: '#ffffff',
-            fontSize: 12.5,
-            fontWeight: 700,
             cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {collapsed ? '⎋' : 'Sign out'}
+          <SignOutIcon size={15} />
         </button>
       </div>
     </div>
