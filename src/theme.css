@@ -223,9 +223,26 @@ button {
   min-width: 0;
 }
 
+/* Same main-content + side-panel idea as .two-col, but for a panel that
+   should stay a slim fixed-width strip (an activity feed, a legend)
+   rather than take a genuine 2/5 share of the row — .two-col's
+   minmax(280px, 2fr) right column grows with the viewport and ends up
+   far wider than content like that needs. */
+.two-col-narrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 20px;
+  align-items: start;
+}
+
+.two-col-narrow > * {
+  min-width: 0;
+}
+
 @media (max-width: 720px) {
   .two-col,
-  .two-col-reverse {
+  .two-col-reverse,
+  .two-col-narrow {
     grid-template-columns: 1fr;
   }
 }
