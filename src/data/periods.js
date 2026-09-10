@@ -31,7 +31,10 @@ export const QUARTERS = [
 
 export const ANNUAL = { key: 'FY2025-26', label: 'Full Year: Sep 2025 – Aug 2026', months: MONTHS.map((m) => m.key) }
 
-export const GRANULARITIES = ['Annual']
+// Monthly/Quarterly used to be reachable here too — restored, but see
+// PeriodContext's `granularities` (role-gated to admins only for now):
+// everyone else still only ever sees ['Annual'], same as before.
+export const GRANULARITIES = ['Annual', 'Quarterly', 'Monthly']
 
 /** Returns the list of {key,label,months} options for a given granularity. */
 export function optionsFor(granularity) {
