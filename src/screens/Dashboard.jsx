@@ -8,7 +8,7 @@ import TrendChart from '../components/TrendChart'
 import AchievementBar from '../components/AchievementBar'
 import DonutChart from '../components/DonutChart'
 import RankingBarChart from '../components/RankingBarChart'
-import { peso, commas, statusFromAchievement } from '../data/api'
+import { peso, commas } from '../data/api'
 import { useAppData } from '../context/DataContext'
 
 export default function Dashboard() {
@@ -42,29 +42,9 @@ export default function Dashboard() {
   const attention = lifeGroups.filter((g) => g.achievementPct >= 80 && g.achievementPct < 100).length
   const critical = lifeGroups.filter((g) => g.achievementPct < 80).length
 
-  // Overall Health — one glance answer to "how are we doing right now?",
-  // averaged across the 5 pillars this page covers.
-  const overallHealthPct =
-    (lifeGroupAchievementPct + firstTimerAchievementPct + financialAchievementPct + reachAchievementPct + attendanceKpi.achievementPct) / 5
-  const overallStatus = statusFromAchievement(overallHealthPct)
-
   return (
     <div className="scroll-page">
       <SectionHeader title="Main Overview" subtitle="See the church. Measure the mission. Manage the ministry." />
-
-      {/* --- Overall Health --- */}
-      <div className="card" style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-        <div>
-          <div className="label">Overall Health</div>
-          <div className="stat-large" style={{ marginTop: 6, fontSize: 'var(--font-hero)' }}>
-            {overallHealthPct.toFixed(0)}%
-          </div>
-        </div>
-        <StatusBadge status={overallStatus} />
-        <div className="body-muted" style={{ flex: 1, minWidth: 200 }}>
-          Average achievement across Life Groups, First Timers, Attendance, Financial, and Geographic Reach.
-        </div>
-      </div>
 
       {/* --- Reach (map) + Immediate Attention --- */}
       <div className="two-col" style={{ marginBottom: 20 }}>
