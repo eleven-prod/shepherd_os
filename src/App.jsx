@@ -7,6 +7,7 @@ import { PeriodProvider } from './context/PeriodContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import NotificationBell from './components/NotificationBell'
+import { SignOutIcon } from './components/Icons'
 import Login from './screens/Login'
 import PendingApproval from './screens/PendingApproval'
 import Dashboard from './screens/Dashboard'
@@ -108,18 +109,20 @@ function AppShell() {
             <button
               onClick={signOut}
               aria-label="Sign out"
+              title="Sign out"
               style={{
-                padding: '7px 12px',
+                padding: '7px 10px',
                 borderRadius: 8,
                 border: '1px solid var(--line)',
                 background: 'var(--surface)',
                 color: 'var(--ink-muted)',
-                fontSize: 12,
-                fontWeight: 700,
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              Sign out
+              <SignOutIcon size={15} />
             </button>
           )}
           <NotificationBell />
