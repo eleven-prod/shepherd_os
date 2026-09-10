@@ -42,12 +42,12 @@ const DEMOGRAPHIC_FIELD_KEYS = DEMOGRAPHIC_CATEGORIES.flatMap(([prefix]) => DEMO
 // (LifeGroupCard) rather than being buried inside each general church
 // card.
 const SIMPLE_FIELDS = [
+  ['numberOfTithers', 'Number of Tithers', 'people'],
   ['tithes', 'Tithes', 'financial'],
   ['offerings', 'Offering', 'financial'],
   ['pledges', 'Pledges', 'financial'],
   ['missionOffering', 'Mission', 'financial'],
   ['support', 'Support', 'financial'],
-  ['numberOfTithers', 'Number of Tithers', 'people'],
 ]
 const ALL_FIELD_KEYS = [...DEMOGRAPHIC_FIELD_KEYS, ...SIMPLE_FIELDS.map(([key]) => key)]
 
@@ -292,7 +292,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
       </div>
 
       <div className="mobile-scroll-pane">
-        <div className="two-col">
+        <div className="two-col-form">
           <div>
             {locked && (
               <div style={{ background: 'var(--surface-muted)', border: '1px solid var(--line)', borderRadius: 10, padding: '16px 18px', marginBottom: 12 }}>
@@ -311,7 +311,14 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
               return (
                 <div key={prefix}>
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{label}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 10 }}>
+                  {/* maxWidth keeps each label+input row compact — without
+                      it, the row (a flex child in a stretch-aligned column)
+                      stretches to the full column width and the label's
+                      flex:1 then pushes the input all the way out to that
+                      far edge, leaving a large empty gap between "Men" and
+                      its box. Capping the row's own width keeps the input
+                      close behind its label instead. */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 10, maxWidth: 210 }}>
                     {demographics.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{dLabel}</div>
@@ -378,16 +385,28 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                         Wk {i + 1}
                       </th>
                     ))}
-                    <th style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink)' }}>Total</th>
+                    {/* Total is the one column that always needs to stay
+                        visible even when the table has to scroll
+                        horizontally to fit Field + every week column —
+                        position:sticky + right:0 pins it to the scroll
+                        container's right edge instead of it scrolling out
+                        of view. Each sticky cell needs its own explicit
+                        background (it's rendered above the scrolled
+                        content, not blended with it) matching whatever
+                        that row's real background is. */}
+                    <th style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink)', position: 'sticky', right: 0, background: 'var(--surface-muted)', borderLeft: '1px solid var(--line)' }}>
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {LG_CATEGORIES.map(([prefix, label, demographics]) => (
                     <Fragment key={prefix}>
                       <tr style={{ borderTop: '2px solid var(--line)' }}>
-                        <td colSpan={weeks.length + 2} style={{ padding: '7px 6px 3px', fontWeight: 700, fontSize: 12.5 }}>
+                        <td colSpan={weeks.length + 1} style={{ padding: '7px 6px 3px', fontWeight: 700, fontSize: 12.5 }}>
                           {label}
                         </td>
+                        <td style={{ padding: '7px 6px 3px', position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }} />
                       </tr>
                       {demographics.map(([dKey, dLabel]) => {
                         const fieldKey = `${prefix}${dKey}`
@@ -402,7 +421,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                                 </td>
                               )
                             })}
-                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
+                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>{totals[fieldKey]}</td>
                           </tr>
                         )
                       })}
@@ -417,7 +436,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                             </td>
                           )
                         })}
-                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>
+                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface-muted)', borderLeft: '1px solid var(--line)' }}>
                           {demographics.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
                         </td>
                       </tr>
@@ -647,7 +666,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
       </div>
 
       <div className="mobile-scroll-pane">
-        <div className="two-col">
+        <div className="two-col-form">
           {/* --- Weekly entry form --- */}
           <div>
             {locked ? (
@@ -673,7 +692,14 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
               return (
                 <div key={prefix}>
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{label}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 10 }}>
+                  {/* maxWidth keeps each label+input row compact — without
+                      it, the row (a flex child in a stretch-aligned column)
+                      stretches to the full column width and the label's
+                      flex:1 then pushes the input all the way out to that
+                      far edge, leaving a large empty gap between "Men" and
+                      its box. Capping the row's own width keeps the input
+                      close behind its label instead. */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5, paddingLeft: 10, maxWidth: 210 }}>
                     {DEMOGRAPHICS.map(([dKey, dLabel]) => (
                       <div key={dKey} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{dLabel}</div>
@@ -709,20 +735,34 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                 (84px -> 128px) — tithes/offering can run into 6-figure peso
                 amounts, which clipped inside the narrower 84px box shared
                 with the small headcount fields. */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 320 }}>
               {SIMPLE_FIELDS.map(([key, label, kind]) => (
-                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{label}</div>
-                  <input
-                    type="number"
-                    step={kind === 'financial' ? 'any' : 1}
-                    value={form[key]}
-                    onChange={set(key)}
-                    disabled={locked}
-                    style={{ ...sheetInputStyle, width: 128, padding: '9px 10px', textAlign: 'right' }}
-                    placeholder="0"
-                  />
-                </div>
+                <Fragment key={key}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0, fontSize: 13 }}>{label}</div>
+                    <input
+                      type="number"
+                      step={kind === 'financial' ? 'any' : 1}
+                      value={form[key]}
+                      onChange={set(key)}
+                      disabled={locked}
+                      style={{ ...sheetInputStyle, width: 128, padding: '9px 10px', textAlign: 'right' }}
+                      placeholder="0"
+                    />
+                  </div>
+                  {/* Combined Tithes + Offering figure — a church typically
+                      reports these two together ("Total Tithes & Offering"),
+                      so show the sum right after Offering, same visual
+                      pattern as each demographic category's Total line. */}
+                  {key === 'offerings' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+                      <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total (Tithes + Offering)</div>
+                      <div style={{ width: 128, textAlign: 'right', paddingRight: 10, fontWeight: 700, fontSize: 14 }}>
+                        {(Number(form.tithes) || 0) + (Number(form.offerings) || 0)}
+                      </div>
+                    </div>
+                  )}
+                </Fragment>
               ))}
             </div>
           </div>
@@ -773,16 +813,23 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                         </span>
                       </th>
                     ))}
-                    <th style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink)' }}>Total</th>
+                    {/* Sticky right:0 keeps Total visible at all times even
+                        when the table has to scroll to fit Field + every
+                        week column — see the matching comment in
+                        LifeGroupAreaCard's table above. */}
+                    <th style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink)', position: 'sticky', right: 0, background: 'var(--surface-muted)', borderLeft: '1px solid var(--line)' }}>
+                      Total
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {DEMOGRAPHIC_CATEGORIES.map(([prefix, , shortLabel]) => (
                     <Fragment key={prefix}>
                       <tr key={`${prefix}-header`} style={{ borderTop: '2px solid var(--line)' }}>
-                        <td colSpan={weeks.length + 2} style={{ padding: '7px 6px 3px', fontWeight: 700, fontSize: 12.5 }}>
+                        <td colSpan={weeks.length + 1} style={{ padding: '7px 6px 3px', fontWeight: 700, fontSize: 12.5 }}>
                           {shortLabel}
                         </td>
+                        <td style={{ padding: '7px 6px 3px', position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }} />
                       </tr>
                       {DEMOGRAPHICS.map(([dKey, dLabel]) => {
                         const fieldKey = `${prefix}${dKey}`
@@ -798,7 +845,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                                 </td>
                               )
                             })}
-                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
+                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>{totals[fieldKey]}</td>
                           </tr>
                         )
                       })}
@@ -814,28 +861,51 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                             </td>
                           )
                         })}
-                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>
+                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface-muted)', borderLeft: '1px solid var(--line)' }}>
                           {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
                         </td>
                       </tr>
                     </Fragment>
                   ))}
                   {SIMPLE_FIELDS.map(([key, label]) => (
-                    <tr key={key} style={{ borderTop: '1px solid var(--line)' }}>
-                      <td style={{ padding: '5px 6px' }}>{label}</td>
-                      {weeks.map((w) => {
-                        const entry = entries.find((e) => e.field_key === key && e.week_start === w)
-                        const title = entry
-                          ? `${entry.submitted_by_name || 'Unknown'} — ${new Date(entry.updated_at).toLocaleString()}`
-                          : undefined
-                        return (
-                          <td key={w} title={title} style={{ padding: '5px 6px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
-                            {entry ? entry.value : '—'}
+                    <Fragment key={key}>
+                      <tr style={{ borderTop: '1px solid var(--line)' }}>
+                        <td style={{ padding: '5px 6px' }}>{label}</td>
+                        {weeks.map((w) => {
+                          const entry = entries.find((e) => e.field_key === key && e.week_start === w)
+                          const title = entry
+                            ? `${entry.submitted_by_name || 'Unknown'} — ${new Date(entry.updated_at).toLocaleString()}`
+                            : undefined
+                          return (
+                            <td key={w} title={title} style={{ padding: '5px 6px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
+                              {entry ? entry.value : '—'}
+                            </td>
+                          )
+                        })}
+                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>{totals[key]}</td>
+                      </tr>
+                      {/* Combined Tithes + Offering row, mirroring the form's
+                          "Total (Tithes + Offering)" line above. */}
+                      {key === 'offerings' && (
+                        <tr style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-muted)' }}>
+                          <td style={{ padding: '5px 6px', fontWeight: 700 }}>Total (Tithes + Offering)</td>
+                          {weeks.map((w) => {
+                            const tithesEntry = entries.find((e) => e.field_key === 'tithes' && e.week_start === w)
+                            const offeringEntry = entries.find((e) => e.field_key === 'offerings' && e.week_start === w)
+                            const hasAny = Boolean(tithesEntry || offeringEntry)
+                            const weekTotal = Number(tithesEntry?.value || 0) + Number(offeringEntry?.value || 0)
+                            return (
+                              <td key={w} style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>
+                                {hasAny ? weekTotal : '—'}
+                              </td>
+                            )
+                          })}
+                          <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface-muted)', borderLeft: '1px solid var(--line)' }}>
+                            {(totals.tithes || 0) + (totals.offerings || 0)}
                           </td>
-                        )
-                      })}
-                      <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>{totals[key]}</td>
-                    </tr>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
