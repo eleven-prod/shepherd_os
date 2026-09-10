@@ -876,6 +876,33 @@ export async function fetchRecentSubmissions(limit = 20) {
   return attachSubmitterNames(data)
 }
 
+/**
+ * Live-updates the Recent Submissions feed: fires `onChange` whenever ANY
+ * row in weekly_entries is inserted or updated, from ANY user's session —
+ * not just this browser tab's own saves (loadEntries()/handleSave already
+ * refresh this tab's own view instantly; this is what makes someone
+ * ELSE'S save show up here without a manual page reload). Returns an
+ * unsubscribe function to call on unmount.
+ *
+ * Requires weekly_entries to be added to Supabase's realtime publication
+ * (Database -> Replication in the dashboard, or
+ * `alter publication supabase_realtime add table weekly_entries;` in the
+ * SQL editor) — a one-time project setting, not something this client
+ * code can turn on by itself. If it isn't enabled, this subscribes
+ * successfully but never fires; nothing breaks, the feed just falls back
+ * to updating only on this tab's own saves.
+ */
+export function subscribeToRecentSubmissions(onChange) {
+  if (!supabase) return () => {}
+  const channel = supabase
+    .channel('weekly_entries_recent_submissions')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_entries' }, onChange)
+    .subscribe()
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}
+
 /** Saves (inserts or updates) one church's one field's one week — the actual source-of-truth write. */
 export async function upsertWeeklyEntry(areaName, fieldKey, weekStart, value) {
   requireSupabase()
