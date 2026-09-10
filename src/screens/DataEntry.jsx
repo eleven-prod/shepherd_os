@@ -145,14 +145,23 @@ export default function DataEntry() {
           )}
         </div>
       )}
-      <RecentSubmissions />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 32, marginTop: 20 }}>
-        {churches.map((church) => (
-          <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} />
-            <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} />
-          </div>
-        ))}
+      {/* .two-col is the established main-content + right-panel pattern
+          (see theme.css) — 3fr/2fr on desktop, collapsing to a single
+          stacked column below 720px so the Recent Submissions panel
+          moves below the entry cards on phones instead of squeezing
+          beside them. Recent Submissions lives in the second column so
+          it reads as a persistent side panel rather than sitting above
+          the actual data-entry work. */}
+      <div className="two-col" style={{ marginTop: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {churches.map((church) => (
+            <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} />
+              <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} />
+            </div>
+          ))}
+        </div>
+        <RecentSubmissions />
       </div>
     </div>
   )
@@ -419,6 +428,12 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
   )
 }
 
+// Sidebar activity feed rather than a wide data table — now that this
+// panel lives in the narrow right column of the .two-col layout, a
+// 6-column table would just force horizontal scrolling inside a
+// sidebar. Per the request, this also drops the specific-input detail
+// (which field, what value) and keeps only what matters at a glance:
+// which church, when it happened, and who submitted it.
 function RecentSubmissions() {
   const [rows, setRows] = useState(null)
   const [error, setError] = useState(null)
@@ -430,41 +445,35 @@ function RecentSubmissions() {
   }, [])
 
   if (error) return null // quietly skip the log rather than blocking the whole page over it
-  if (!rows) return <div className="body-muted">Loading recent activity...</div>
 
   return (
     <div className="card">
       <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Recent Submissions</h2>
       <div className="caption" style={{ marginBottom: 12 }}>
-        Every entry across every church — visible to everyone, not just Admins.
+        Every church's activity — visible to everyone, not just Admins.
       </div>
-      {rows.length === 0 ? (
+      {!rows ? (
+        <div className="body-muted">Loading recent activity...</div>
+      ) : rows.length === 0 ? (
         <div className="body-muted">No submissions yet.</div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640, fontSize: 12.5 }}>
-            <thead>
-              <tr style={{ background: 'var(--surface-muted)' }}>
-                {['Church', 'Field', 'Week Of', 'Value', 'Submitted By', 'When'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: 'var(--ink-muted)' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id} style={{ borderTop: '1px solid var(--line)' }}>
-                  <td style={{ padding: '6px 10px' }}>{r.area_name}</td>
-                  <td style={{ padding: '6px 10px' }}>{FIELD_LABELS[r.field_key] || r.field_key}</td>
-                  <td style={{ padding: '6px 10px' }}>{r.week_start}</td>
-                  <td style={{ padding: '6px 10px', fontWeight: 700 }}>{r.value}</td>
-                  <td style={{ padding: '6px 10px' }}>{r.submitted_by_name || 'Unknown'}</td>
-                  <td style={{ padding: '6px 10px', color: 'var(--ink-faint)' }}>{new Date(r.updated_at).toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {rows.map((r) => (
+            <div
+              key={r.id}
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                padding: '10px 2px',
+                borderTop: '1px solid var(--line)',
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700 }}>{r.area_name}</div>
+              <div style={{ fontSize: 12, color: 'var(--ink-muted)' }}>{r.submitted_by_name || 'Unknown'}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>{new Date(r.updated_at).toLocaleString()}</div>
+            </div>
+          ))}
         </div>
       )}
     </div>
