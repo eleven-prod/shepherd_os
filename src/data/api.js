@@ -19,7 +19,10 @@ export const STATUS_META = {
   [KPI_STATUS.CRITICAL]: { label: 'Critical', fg: 'var(--status-critical)', bg: 'var(--status-critical-bg)' },
 }
 
-function achievementPct(actual, target) {
+// Exported so screens can compute their own status/achievement for
+// period-selected (historical) figures, which come back as plain
+// {actual, target} from periodApi rather than a pre-hydrated KPI.
+export function achievementPct(actual, target) {
   return target === 0 ? 0 : (actual / target) * 100
 }
 
@@ -960,12 +963,33 @@ export async function upsertWeeklyEntry(areaName, fieldKey, weekStart, value) {
   if (error) throw new Error(error.message)
 }
 
+// area_people_stats/area_financial_stats/life_groups/kpis each hold a
+// single "actual" figure per area with no month dimension — they're a
+// live snapshot of "right now", which Membership/Financial/Dashboard
+// label "This Month" and treat as always current. Admins can browse
+// Data Entry's month/year picker to backfill or correct a PAST month,
+// which is legitimate — but if that save were allowed to overwrite the
+// same single snapshot column, backfilling August in September would
+// make "This Month" show August's total, mislabeled as September's.
+// weekly_entries itself is unaffected either way (it's the real source
+// of truth, keyed by week_start) — this guard only decides whether a
+// save is also allowed to update the live "current" snapshot the rest
+// of the app reads.
+function isCurrentCalendarMonth(monthStart) {
+  const d = new Date(monthStart)
+  const now = new Date()
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+}
+
 /**
- * Sums every weekly entry for one church/field/month and writes that
- * total into the existing monthly Actual column the rest of the app
- * already reads — so Membership/Financial/Life Groups/Dashboard etc.
- * keep working unchanged, seeing an always-up-to-date monthly total
- * derived from real weekly entries instead of a manually-typed figure.
+ * Sums every weekly entry for one church/field/month and, ONLY if that
+ * month is the real current calendar month, writes the total into the
+ * existing monthly Actual column the rest of the app already reads —
+ * so Membership/Financial/Life Groups/Dashboard etc. see an always-
+ * up-to-date monthly total derived from real weekly entries, without a
+ * backfilled past month ever masquerading as "This Month". A past
+ * month's entries stay correctly recorded in weekly_entries regardless;
+ * they just don't push into the live snapshot.
  */
 export async function recomputeMonthlyActual(areaName, fieldKey, monthStart) {
   requireSupabase()
@@ -974,6 +998,10 @@ export async function recomputeMonthlyActual(areaName, fieldKey, monthStart) {
 
   const entries = await fetchWeeklyEntries(areaName, monthStart)
   const total = entries.filter((e) => e.field_key === fieldKey).reduce((sum, e) => sum + Number(e.value), 0)
+
+  if (!isCurrentCalendarMonth(monthStart)) {
+    return total
+  }
 
   const { error } = await supabase.from(mapping.table).update({ [mapping.column]: total }).eq(mapping.matchColumn, areaName)
   if (error) throw new Error(error.message)
