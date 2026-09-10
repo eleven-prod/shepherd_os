@@ -1,10 +1,22 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { GRANULARITIES, optionsFor, ANNUAL } from '../data/periods'
 import { fetchPeriodMetrics, fetchMonthlySeries } from '../data/periodApi'
+import { useAuth } from './AuthContext'
 
 const PeriodContext = createContext(null)
 
+// Kept in sync with DataEntry.jsx's own ADMIN_ROLES — not shared from
+// there to avoid pulling a whole screen file into a context module.
+const ADMIN_ROLES = ['admin', 'pastor_mis']
+
 export function PeriodProvider({ children }) {
+  const { role } = useAuth()
+  // Monthly/Quarterly granularity (drilling into a specific past
+  // period) is admin-only for now — everyone else still only ever sees
+  // the single full-year Annual option, same as before this was
+  // restored.
+  const granularities = ADMIN_ROLES.includes(role) ? GRANULARITIES : ['Annual']
+
   const [granularity, setGranularityState] = useState('Annual')
   const [selectedKey, setSelectedKey] = useState(ANNUAL.key)
   const [metrics, setMetrics] = useState(null)
@@ -18,7 +30,12 @@ export function PeriodProvider({ children }) {
   const [monthlySeriesLoading, setMonthlySeriesLoading] = useState(true)
   const [monthlySeriesError, setMonthlySeriesError] = useState(null)
 
-  const options = useMemo(() => optionsFor(granularity), [granularity])
+  // Defensive clamp: if the role's allowed granularities no longer
+  // include whatever's in state (e.g. an admin's role changes mid-
+  // session), fall back to Annual rather than showing options for a
+  // granularity this user shouldn't have.
+  const effectiveGranularity = granularities.includes(granularity) ? granularity : 'Annual'
+  const options = useMemo(() => optionsFor(effectiveGranularity), [effectiveGranularity])
   const selected = useMemo(() => options.find((o) => o.key === selectedKey) || options[0], [options, selectedKey])
 
   const setGranularity = useCallback((g) => {
@@ -73,10 +90,10 @@ export function PeriodProvider({ children }) {
   }, [loadMonthlySeries])
 
   const value = {
-    granularity,
+    granularity: effectiveGranularity,
     setGranularity,
     applyPeriod,
-    granularities: GRANULARITIES,
+    granularities,
     options,
     selectedKey,
     setSelectedKey,
