@@ -370,7 +370,11 @@ const LifeGroupAreaCard = forwardRef(function LifeGroupAreaCard({ areaName, week
         await upsertWeeklyEntry(areaName, key, selectedWeek, form[key])
       }
       for (const key of changedFields) {
-        await recomputeMonthlyActual(areaName, key, selectedWeek)
+        // The month's actual START (day 1), not selectedWeek — passing a
+        // mid-month Sunday here used to make recomputeMonthlyActual only
+        // sum entries from that week onward, silently dropping earlier
+        // weeks already saved this month from the pushed monthly total.
+        await recomputeMonthlyActual(areaName, key, `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`)
       }
       await loadEntries()
       onSaved?.()
@@ -747,7 +751,11 @@ const ChurchCard = forwardRef(function ChurchCard({ church, weeks, year, monthIn
         await upsertWeeklyEntry(areaName, key, selectedWeek, form[key])
       }
       for (const key of changedFields) {
-        await recomputeMonthlyActual(areaName, key, selectedWeek)
+        // The month's actual START (day 1), not selectedWeek — passing a
+        // mid-month Sunday here used to make recomputeMonthlyActual only
+        // sum entries from that week onward, silently dropping earlier
+        // weeks already saved this month from the pushed monthly total.
+        await recomputeMonthlyActual(areaName, key, `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`)
       }
       await loadEntries()
       onSaved?.()
