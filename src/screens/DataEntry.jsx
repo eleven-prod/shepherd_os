@@ -57,6 +57,18 @@ const FIELD_LABELS = Object.fromEntries([
 ])
 const ADMIN_ROLES = ['admin', 'pastor_mis']
 
+// Weekly Progress's Total column is a running sum across every week
+// entered this month — meaningful for a flow metric (money given,
+// attendance touches), but not for a headcount of DISTINCT people:
+// summing "how many tithers this week" across 4 weeks doesn't give a
+// real count of tithers for the month, it just adds the same returning
+// people multiple times. Per request, WSA (all its demographic rows
+// plus its category subtotal) and Number of Tithers show a dash in
+// that column instead of a cumulative figure — the per-week values
+// still show normally, only the monthly-sum column is suppressed.
+const NO_CUMULATIVE_TOTAL_PREFIXES = new Set(['attendance'])
+const NO_CUMULATIVE_TOTAL_KEYS = new Set(['numberOfTithers'])
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -871,7 +883,9 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
                                 </td>
                               )
                             })}
-                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>{totals[fieldKey]}</td>
+                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>
+                              {NO_CUMULATIVE_TOTAL_PREFIXES.has(prefix) ? '—' : totals[fieldKey]}
+                            </td>
                           </tr>
                         )
                       })}
@@ -888,7 +902,7 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
                           )
                         })}
                         <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface-muted)', borderLeft: '1px solid var(--line)' }}>
-                          {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
+                          {NO_CUMULATIVE_TOTAL_PREFIXES.has(prefix) ? '—' : DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
                         </td>
                       </tr>
                     </Fragment>
@@ -908,7 +922,9 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
                             </td>
                           )
                         })}
-                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>{totals[key]}</td>
+                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, position: 'sticky', right: 0, background: 'var(--surface)', borderLeft: '1px solid var(--line)' }}>
+                          {NO_CUMULATIVE_TOTAL_KEYS.has(key) ? '—' : totals[key]}
+                        </td>
                       </tr>
                       {/* Combined Tithes + Offering row, mirroring the form's
                           "Total (Tithes + Offering)" line above. */}
