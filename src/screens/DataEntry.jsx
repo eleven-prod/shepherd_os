@@ -1,5 +1,5 @@
 import { LockIcon } from '../components/Icons'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import SectionHeader from '../components/SectionHeader'
 import { sheetInputStyle } from '../components/FormSheet'
 import { useAppData } from '../context/DataContext'
@@ -158,6 +158,39 @@ export default function DataEntry() {
   const activeAreaName = isAdmin ? selectedAreaName || churches[0]?.areaName : null
   const visibleChurches = isAdmin ? churches.filter((c) => c.areaName === activeAreaName) : churches
 
+  // Every ChurchCard/LifeGroupAreaCard exposes save() via ref (see
+  // useImperativeHandle in each) — keyed by areaName rather than a plain
+  // array so a card unmounting (e.g. switching the area selector) can't
+  // leave a stale ref behind for the Submit button to call.
+  const churchRefs = useRef({})
+  const lgRefs = useRef({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitFlash, setSubmitFlash] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
+
+  async function handleSubmitAll() {
+    setSubmitting(true)
+    setSubmitError(null)
+    try {
+      const saves = []
+      for (const church of visibleChurches) {
+        const churchRef = churchRefs.current[church.areaName]
+        const lgRef = lgRefs.current[church.areaName]
+        if (churchRef) saves.push(churchRef.save())
+        if (lgRef) saves.push(lgRef.save())
+      }
+      // Each card's own handleSave already calls onSaved (bumpActivity)
+      // on its own success — no need to bump again here.
+      await Promise.all(saves)
+      setSubmitFlash(true)
+      setTimeout(() => setSubmitFlash(false), 2000)
+    } catch (err) {
+      setSubmitError(err.message || 'Something went wrong saving one of the areas above.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className="scroll-page">
       <SectionHeader
@@ -213,10 +246,54 @@ export default function DataEntry() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
           {visibleChurches.map((church) => (
             <div key={church.areaName} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <ChurchCard church={church} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} />
-              <LifeGroupAreaCard areaName={church.areaName} weeks={weeks} year={year} monthIndex={monthIndex} onSaved={bumpActivity} />
+              <ChurchCard
+                ref={(el) => {
+                  if (el) churchRefs.current[church.areaName] = el
+                  else delete churchRefs.current[church.areaName]
+                }}
+                church={church}
+                weeks={weeks}
+                year={year}
+                monthIndex={monthIndex}
+                onSaved={bumpActivity}
+              />
+              <LifeGroupAreaCard
+                ref={(el) => {
+                  if (el) lgRefs.current[church.areaName] = el
+                  else delete lgRefs.current[church.areaName]
+                }}
+                areaName={church.areaName}
+                weeks={weeks}
+                year={year}
+                monthIndex={monthIndex}
+                onSaved={bumpActivity}
+              />
             </div>
           ))}
+          {/* Dedicated page-wide Submit, replacing each card's own "Save
+              Week of ..." button. Placed here — inside the main column,
+              right after the cards — rather than after the whole
+              .two-col-narrow, so on mobile (where that grid collapses to
+              one stacked column) Submit lands right after the cards it
+              saves instead of below Recent Submissions. */}
+          {submitError && <div style={{ color: 'var(--status-critical)', fontSize: 13 }}>{submitError}</div>}
+          <button
+            onClick={handleSubmitAll}
+            disabled={submitting}
+            style={{
+              padding: '12px 0',
+              borderRadius: 10,
+              border: 'none',
+              background: submitFlash ? 'var(--status-on-target)' : 'var(--primary)',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: submitting ? 'default' : 'pointer',
+              opacity: submitting ? 0.7 : 1,
+            }}
+          >
+            {submitting ? 'Saving...' : submitFlash ? 'Saved ✓' : 'Submit'}
+          </button>
         </div>
         <RecentSubmissions refreshKey={activityVersion} />
       </div>
@@ -224,7 +301,7 @@ export default function DataEntry() {
   )
 }
 
-function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
+const LifeGroupAreaCard = forwardRef(function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }, ref) {
   const { role } = useAuth()
   const isAdmin = ADMIN_ROLES.includes(role)
 
@@ -280,6 +357,11 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
   }
 
   async function handleSave() {
+    // Nothing to save while locked (the deadline's passed and this isn't
+    // an admin) — the page-wide Submit button calls every visible card's
+    // save() without knowing which ones are locked, so this guard has to
+    // live here rather than on a per-card button that no longer exists.
+    if (locked) return
     setSaving(true)
     setError(null)
     try {
@@ -296,10 +378,16 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
       setTimeout(() => setSavedFlash(false), 2000)
     } catch (err) {
       setError(err.message)
+      throw err // let the page-wide Submit button know this card failed
     } finally {
       setSaving(false)
     }
   }
+
+  // Exposes save() so the single page-wide Submit button (in DataEntry)
+  // can trigger every visible card's save at once — replaces each
+  // card's own "Save Week of ..." button.
+  useImperativeHandle(ref, () => ({ save: handleSave }))
 
   const totals = Object.fromEntries(LG_FIELD_KEYS.map((key) => [key, entries.filter((e) => e.field_key === key).reduce((s, e) => s + Number(e.value), 0)]))
 
@@ -397,26 +485,21 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
 
           {error && <div style={{ color: 'var(--status-critical)', fontSize: 13, marginTop: 10 }}>{error}</div>}
 
-          {!locked && (
-            <button
-              onClick={handleSave}
-              disabled={saving}
+          {/* No per-card save button anymore — the page-wide Submit
+              button at the bottom saves every visible card at once.
+              Still surface this card's own in-flight state so it's
+              clear what the page-wide Submit is doing to it. */}
+          {!locked && (saving || savedFlash) && (
+            <div
               style={{
-                width: '100%',
-                marginTop: 16,
-                padding: '10px 0',
-                borderRadius: 8,
-                border: 'none',
-                background: savedFlash ? 'var(--status-on-target)' : 'var(--primary)',
-                color: 'white',
+                marginTop: 12,
+                fontSize: 12.5,
                 fontWeight: 700,
-                fontSize: 13.5,
-                cursor: saving ? 'default' : 'pointer',
-                opacity: saving ? 0.7 : 1,
+                color: savedFlash ? 'var(--status-on-target)' : 'var(--ink-muted)',
               }}
             >
-              {saving ? 'Saving...' : savedFlash ? 'Saved ✓' : `Save Week of ${selectedWeek}`}
-            </button>
+              {saving ? 'Saving...' : 'Saved ✓'}
+            </div>
           )}
         </div>
 
@@ -495,7 +578,7 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex, onSaved }) {
       </div>
     </div>
   )
-}
+})
 
 // One save action in a ChurchCard/LifeGroupAreaCard writes one row per
 // FIELD (upsertWeeklyEntry is called once per field), so a single
@@ -599,7 +682,7 @@ function RecentSubmissions({ refreshKey }) {
   )
 }
 
-function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
+const ChurchCard = forwardRef(function ChurchCard({ church, weeks, year, monthIndex, onSaved }, ref) {
   const { areaName, isMainChurch } = church
   const { role } = useAuth()
   const isAdmin = ADMIN_ROLES.includes(role)
@@ -653,6 +736,9 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
   }
 
   async function handleSave() {
+    // See matching comment in LifeGroupAreaCard — the page-wide Submit
+    // button calls save() on every visible card regardless of lock state.
+    if (locked) return
     setSaving(true)
     setError(null)
     try {
@@ -669,10 +755,13 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
       setTimeout(() => setSavedFlash(false), 2000)
     } catch (err) {
       setError(err.message)
+      throw err
     } finally {
       setSaving(false)
     }
   }
+
+  useImperativeHandle(ref, () => ({ save: handleSave }))
 
   const totals = Object.fromEntries(ALL_FIELD_KEYS.map((key) => [key, entries.filter((e) => e.field_key === key).reduce((s, e) => s + Number(e.value), 0)]))
 
@@ -835,26 +924,19 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
 
           {error && <div style={{ color: 'var(--status-critical)', fontSize: 13, marginTop: 10 }}>{error}</div>}
 
-          {!locked && (
-            <button
-              onClick={handleSave}
-              disabled={saving}
+          {/* No per-card save button anymore — see matching comment in
+              LifeGroupAreaCard. */}
+          {!locked && (saving || savedFlash) && (
+            <div
               style={{
-                width: '100%',
-                marginTop: 16,
-                padding: '10px 0',
-                borderRadius: 8,
-                border: 'none',
-                background: savedFlash ? 'var(--status-on-target)' : 'var(--primary)',
-                color: 'white',
+                marginTop: 12,
+                fontSize: 12.5,
                 fontWeight: 700,
-                fontSize: 13.5,
-                cursor: saving ? 'default' : 'pointer',
-                opacity: saving ? 0.7 : 1,
+                color: savedFlash ? 'var(--status-on-target)' : 'var(--ink-muted)',
               }}
             >
-              {saving ? 'Saving...' : savedFlash ? 'Saved ✓' : `Save Week of ${selectedWeek}`}
-            </button>
+              {saving ? 'Saving...' : 'Saved ✓'}
+            </div>
           )}
         </div>
 
@@ -1011,4 +1093,4 @@ function ChurchCard({ church, weeks, year, monthIndex, onSaved }) {
       </div>
     </div>
   )
-}
+})
