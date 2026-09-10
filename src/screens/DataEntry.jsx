@@ -18,9 +18,15 @@ import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRec
 // several weeks of "Category 1 Men" would incorrectly inflate what
 // should be a single current count, unlike Attendance where multiple
 // weeks legitimately do add up to a monthly total.
+// Third element is a short label for the Weekly Progress table's
+// per-category header row — that table already needs Field + up to 5
+// week columns + Total, so the full names ("Worship Service
+// Attendance", "WSA First Timers") were eating width that column
+// values need. The entry form above it has plenty of room and keeps
+// the full name (second element) for clarity.
 const DEMOGRAPHIC_CATEGORIES = [
-  ['attendance', 'Worship Service Attendance'],
-  ['firstTimers', 'WSA First Timers'],
+  ['attendance', 'Worship Service Attendance', 'WSA'],
+  ['firstTimers', 'WSA First Timers', 'WSAFT'],
 ]
 const DEMOGRAPHICS = [
   ['Men', 'Men'],
@@ -315,14 +321,14 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                           value={form[`${prefix}${dKey}`]}
                           onChange={set(`${prefix}${dKey}`)}
                           disabled={locked}
-                          style={{ ...sheetInputStyle, width: 110 }}
+                          style={{ ...sheetInputStyle, width: 84 }}
                           placeholder="0"
                         />
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
                       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total</div>
-                      <div style={{ width: 110, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
+                      <div style={{ width: 84, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
                 </div>
@@ -363,23 +369,23 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
             <div className="body-muted">Loading...</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 420, fontSize: 12 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 360, fontSize: 11.5 }}>
                 <thead>
                   <tr style={{ background: 'var(--surface-muted)' }}>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 700, color: 'var(--ink-muted)' }}>Field</th>
+                    <th style={{ textAlign: 'left', padding: '5px 6px', fontWeight: 700, color: 'var(--ink-muted)' }}>Field</th>
                     {weeks.map((w, i) => (
-                      <th key={w} style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 700, color: 'var(--ink-muted)' }}>
+                      <th key={w} style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink-muted)' }}>
                         Wk {i + 1}
                       </th>
                     ))}
-                    <th style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 700, color: 'var(--ink)' }}>Total</th>
+                    <th style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink)' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   {LG_CATEGORIES.map(([prefix, label, demographics]) => (
                     <Fragment key={prefix}>
                       <tr style={{ borderTop: '2px solid var(--line)' }}>
-                        <td colSpan={weeks.length + 2} style={{ padding: '8px 8px 4px', fontWeight: 700, fontSize: 12.5 }}>
+                        <td colSpan={weeks.length + 2} style={{ padding: '7px 6px 3px', fontWeight: 700, fontSize: 12.5 }}>
                           {label}
                         </td>
                       </tr>
@@ -387,31 +393,31 @@ function LifeGroupAreaCard({ areaName, weeks, year, monthIndex }) {
                         const fieldKey = `${prefix}${dKey}`
                         return (
                           <tr key={fieldKey} style={{ borderTop: '1px solid var(--line)' }}>
-                            <td style={{ padding: '6px 8px 6px 18px' }}>{dLabel}</td>
+                            <td style={{ padding: '5px 6px 5px 16px' }}>{dLabel}</td>
                             {weeks.map((w) => {
                               const entry = entries.find((e) => e.field_key === fieldKey && e.week_start === w)
                               return (
-                                <td key={w} style={{ padding: '6px 8px', textAlign: 'right' }}>
+                                <td key={w} style={{ padding: '5px 6px', textAlign: 'right' }}>
                                   {entry ? entry.value : '—'}
                                 </td>
                               )
                             })}
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
+                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
                           </tr>
                         )
                       })}
                       <tr style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-muted)' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 700 }}>Total</td>
+                        <td style={{ padding: '5px 6px', fontWeight: 700 }}>Total</td>
                         {weeks.map((w) => {
                           const weekEntries = entries.filter((e) => e.week_start === w && demographics.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
                           const weekTotal = weekEntries.reduce((sum, e) => sum + Number(e.value), 0)
                           return (
-                            <td key={w} style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
+                            <td key={w} style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>
                               {weekEntries.length > 0 ? weekTotal : '—'}
                             </td>
                           )
                         })}
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
+                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>
                           {demographics.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
                         </td>
                       </tr>
@@ -677,14 +683,14 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                           value={form[`${prefix}${dKey}`]}
                           onChange={set(`${prefix}${dKey}`)}
                           disabled={locked}
-                          style={{ ...sheetInputStyle, width: 110 }}
+                          style={{ ...sheetInputStyle, width: 84 }}
                           placeholder="0"
                         />
                       </div>
                     ))}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
                       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700 }}>Total</div>
-                      <div style={{ width: 110, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
+                      <div style={{ width: 84, textAlign: 'center', fontWeight: 700, fontSize: 14 }}>{categoryTotal}</div>
                     </div>
                   </div>
                 </div>
@@ -700,7 +706,7 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                   value={form[key]}
                   onChange={set(key)}
                   disabled={locked}
-                  style={{ ...sheetInputStyle, width: 110 }}
+                  style={{ ...sheetInputStyle, width: 84 }}
                   placeholder="0"
                 />
               </div>
@@ -741,60 +747,60 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
             <div className="body-muted">Loading...</div>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480, fontSize: 12 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 380, fontSize: 11.5 }}>
                 <thead>
                   <tr style={{ background: 'var(--surface-muted)' }}>
-                    <th style={{ textAlign: 'left', padding: '6px 8px', fontWeight: 700, color: 'var(--ink-muted)' }}>Field</th>
+                    <th style={{ textAlign: 'left', padding: '5px 6px', fontWeight: 700, color: 'var(--ink-muted)' }}>Field</th>
                     {weeks.map((w, i) => (
-                      <th key={w} style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 700, color: 'var(--ink-muted)' }}>
+                      <th key={w} style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink-muted)' }}>
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                           {!isAdmin && !isWithinDeadline(w) && <LockIcon size={10} />}
                           Wk {i + 1}
                         </span>
                       </th>
                     ))}
-                    <th style={{ textAlign: 'right', padding: '6px 8px', fontWeight: 700, color: 'var(--ink)' }}>Total</th>
+                    <th style={{ textAlign: 'right', padding: '5px 6px', fontWeight: 700, color: 'var(--ink)' }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {DEMOGRAPHIC_CATEGORIES.map(([prefix, label]) => (
+                  {DEMOGRAPHIC_CATEGORIES.map(([prefix, , shortLabel]) => (
                     <Fragment key={prefix}>
                       <tr key={`${prefix}-header`} style={{ borderTop: '2px solid var(--line)' }}>
-                        <td colSpan={weeks.length + 2} style={{ padding: '8px 8px 4px', fontWeight: 700, fontSize: 12.5 }}>
-                          {label}
+                        <td colSpan={weeks.length + 2} style={{ padding: '7px 6px 3px', fontWeight: 700, fontSize: 12.5 }}>
+                          {shortLabel}
                         </td>
                       </tr>
                       {DEMOGRAPHICS.map(([dKey, dLabel]) => {
                         const fieldKey = `${prefix}${dKey}`
                         return (
                           <tr key={fieldKey} style={{ borderTop: '1px solid var(--line)' }}>
-                            <td style={{ padding: '6px 8px 6px 18px' }}>{dLabel}</td>
+                            <td style={{ padding: '5px 6px 5px 16px' }}>{dLabel}</td>
                             {weeks.map((w) => {
                               const entry = entries.find((e) => e.field_key === fieldKey && e.week_start === w)
                               const title = entry ? `${entry.submitted_by_name || 'Unknown'} — ${new Date(entry.updated_at).toLocaleString()}` : undefined
                               return (
-                                <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
+                                <td key={w} title={title} style={{ padding: '5px 6px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
                                   {entry ? entry.value : '—'}
                                 </td>
                               )
                             })}
-                            <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
+                            <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>{totals[fieldKey]}</td>
                           </tr>
                         )
                       })}
                       <tr key={`${prefix}-total`} style={{ borderTop: '1px solid var(--line)', background: 'var(--surface-muted)' }}>
-                        <td style={{ padding: '6px 8px', fontWeight: 700 }}>Total</td>
+                        <td style={{ padding: '5px 6px', fontWeight: 700 }}>Total</td>
                         {weeks.map((w) => {
                           const weekEntries = entries.filter((e) => e.week_start === w && DEMOGRAPHICS.some(([dKey]) => e.field_key === `${prefix}${dKey}`))
                           const weekTotal = weekEntries.reduce((sum, e) => sum + Number(e.value), 0)
                           const title = weekEntries.length > 0 ? `${weekEntries.length} of 5 demographics entered` : undefined
                           return (
-                            <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700, cursor: weekEntries.length > 0 ? 'help' : 'default' }}>
+                            <td key={w} title={title} style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700, cursor: weekEntries.length > 0 ? 'help' : 'default' }}>
                               {weekEntries.length > 0 ? weekTotal : '—'}
                             </td>
                           )
                         })}
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>
+                        <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>
                           {DEMOGRAPHICS.reduce((sum, [dKey]) => sum + totals[`${prefix}${dKey}`], 0)}
                         </td>
                       </tr>
@@ -802,19 +808,19 @@ function ChurchCard({ church, weeks, year, monthIndex }) {
                   ))}
                   {SIMPLE_FIELDS.map(([key, label]) => (
                     <tr key={key} style={{ borderTop: '1px solid var(--line)' }}>
-                      <td style={{ padding: '6px 8px' }}>{label}</td>
+                      <td style={{ padding: '5px 6px' }}>{label}</td>
                       {weeks.map((w) => {
                         const entry = entries.find((e) => e.field_key === key && e.week_start === w)
                         const title = entry
                           ? `${entry.submitted_by_name || 'Unknown'} — ${new Date(entry.updated_at).toLocaleString()}`
                           : undefined
                         return (
-                          <td key={w} title={title} style={{ padding: '6px 8px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
+                          <td key={w} title={title} style={{ padding: '5px 6px', textAlign: 'right', cursor: entry ? 'help' : 'default' }}>
                             {entry ? entry.value : '—'}
                           </td>
                         )
                       })}
-                      <td style={{ padding: '6px 8px', textAlign: 'right', fontWeight: 700 }}>{totals[key]}</td>
+                      <td style={{ padding: '5px 6px', textAlign: 'right', fontWeight: 700 }}>{totals[key]}</td>
                     </tr>
                   ))}
                 </tbody>
