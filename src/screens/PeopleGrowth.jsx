@@ -8,6 +8,7 @@ import DonutChart from '../components/DonutChart'
 import OverlappingTargetBarChart from '../components/OverlappingTargetBarChart'
 import TrendChart from '../components/TrendChart'
 import { LoadingSpinner } from '../components/Spinner'
+import PercentLoader from '../components/PercentLoader'
 import { commas, statusFromAchievement, achievementPct } from '../data/api'
 import { useAppData } from '../context/DataContext'
 import { usePeriod } from '../context/PeriodContext'
@@ -100,7 +101,15 @@ export default function PeopleGrowth() {
       <SectionHeader title="Membership" subtitle="Category 1, Category 2, Attendance, First Timers, and Workers" />
       {periodBar}
 
-      {isHistorical && metricsLoading && <div className="body-muted" style={{ marginBottom: 16 }}>Loading figures for this period...</div>}
+      {isHistorical && metricsLoading && (
+        // Figures already on screen stay put (metrics only ever swaps once
+        // the new period arrives) — this just signals a refresh is under
+        // way, instead of blanking the screen out while it loads.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <PercentLoader active width={90} height={5} />
+          <span className="body-muted">Updating figures for this period...</span>
+        </div>
+      )}
       {isHistorical && metricsError && (
         <div className="card" style={{ textAlign: 'center', padding: 24, marginBottom: 20 }}>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Couldn't load this period</div>
