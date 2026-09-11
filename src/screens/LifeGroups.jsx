@@ -3,6 +3,7 @@ import SectionHeader from '../components/SectionHeader'
 import StatusBadge from '../components/StatusBadge'
 import TrendChart from '../components/TrendChart'
 import RankingBarChart from '../components/RankingBarChart'
+import PercentLoader from '../components/PercentLoader'
 import { KPI_STATUS, commas, statusFromAchievement, achievementPct } from '../data/api'
 import { useAppData } from '../context/DataContext'
 import { usePeriodMode } from '../components/PeriodModeBar'
@@ -76,7 +77,15 @@ export default function LifeGroups() {
       <SectionHeader title="Life Groups" subtitle="Roll-up headcount by group, church-defined ministry area, and church total" />
       {periodBar}
 
-      {isHistorical && metricsLoading && <div className="body-muted" style={{ marginBottom: 16 }}>Loading figures for this period...</div>}
+      {isHistorical && metricsLoading && (
+        // Figures already on screen stay put (metrics only ever swaps once
+        // the new period arrives) — this just signals a refresh is under
+        // way, instead of blanking the screen out while it loads.
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          <PercentLoader active width={90} height={5} />
+          <span className="body-muted">Updating figures for this period...</span>
+        </div>
+      )}
       {isHistorical && metricsError && (
         <div className="card" style={{ textAlign: 'center', padding: 24, marginBottom: 20 }}>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Couldn't load this period</div>
