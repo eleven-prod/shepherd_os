@@ -23,12 +23,27 @@ export function PeriodProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // The "PYA + monthly trend" bar charts always show the full year
-  // regardless of the selected period, so this is fetched once on mount
-  // rather than refetching every time the period selector changes.
+  // The "PYA + monthly trend" bar charts always show the full FISCAL
+  // YEAR the selected period belongs to (not just the selected months
+  // themselves) — but which fiscal year that is DOES depend on the
+  // selection, so this refetches every time the period selector changes,
+  // right alongside `metrics` below. Reports (which has no live/historical
+  // toggle of its own — it's always period-driven) uses this directly.
   const [monthlySeries, setMonthlySeries] = useState(null)
   const [monthlySeriesLoading, setMonthlySeriesLoading] = useState(true)
   const [monthlySeriesError, setMonthlySeriesError] = useState(null)
+
+  // A SEPARATE trend series, always for whatever fiscal year is live
+  // right now, regardless of what's selected in the period picker.
+  // Financial/Life Groups/Membership's "This Month" trend charts need
+  // this one in Current mode — they show live data next to the period
+  // picker's own historical figures, and shouldn't jump to a different
+  // fiscal year's chart just because someone (possibly on Reports, which
+  // shares this same period selection) picked a past period elsewhere.
+  // Fetched once on mount, independent of `selected`.
+  const [liveMonthlySeries, setLiveMonthlySeries] = useState(null)
+  const [liveMonthlySeriesLoading, setLiveMonthlySeriesLoading] = useState(true)
+  const [liveMonthlySeriesError, setLiveMonthlySeriesError] = useState(null)
 
   // Defensive clamp: if the role's allowed granularities no longer
   // include whatever's in state (e.g. an admin's role changes mid-
@@ -67,11 +82,11 @@ export function PeriodProvider({ children }) {
     }
   }, [])
 
-  const loadMonthlySeries = useCallback(async () => {
+  const loadMonthlySeries = useCallback(async (months) => {
     setMonthlySeriesLoading(true)
     setMonthlySeriesError(null)
     try {
-      const result = await fetchMonthlySeries()
+      const result = await fetchMonthlySeries(months)
       setMonthlySeries(result)
     } catch (err) {
       console.error(err)
@@ -81,13 +96,34 @@ export function PeriodProvider({ children }) {
     }
   }, [])
 
+  const loadLiveMonthlySeries = useCallback(async () => {
+    setLiveMonthlySeriesLoading(true)
+    setLiveMonthlySeriesError(null)
+    try {
+      // No months passed in → fetchMonthlySeries defaults to whichever
+      // fiscal year today actually falls in, ignoring any period
+      // selection entirely.
+      const result = await fetchMonthlySeries()
+      setLiveMonthlySeries(result)
+    } catch (err) {
+      console.error(err)
+      setLiveMonthlySeriesError(err.message || 'Could not load the monthly trend.')
+    } finally {
+      setLiveMonthlySeriesLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (selected) load(selected.months)
   }, [selected, load])
 
   useEffect(() => {
-    loadMonthlySeries()
-  }, [loadMonthlySeries])
+    if (selected) loadMonthlySeries(selected.months)
+  }, [selected, loadMonthlySeries])
+
+  useEffect(() => {
+    loadLiveMonthlySeries()
+  }, [loadLiveMonthlySeries])
 
   const value = {
     granularity: effectiveGranularity,
@@ -105,7 +141,11 @@ export function PeriodProvider({ children }) {
     monthlySeries,
     monthlySeriesLoading,
     monthlySeriesError,
-    refetchMonthlySeries: loadMonthlySeries,
+    refetchMonthlySeries: () => selected && loadMonthlySeries(selected.months),
+    liveMonthlySeries,
+    liveMonthlySeriesLoading,
+    liveMonthlySeriesError,
+    refetchLiveMonthlySeries: loadLiveMonthlySeries,
   }
 
   return <PeriodContext.Provider value={value}>{children}</PeriodContext.Provider>
