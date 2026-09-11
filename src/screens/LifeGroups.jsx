@@ -19,7 +19,7 @@ const DEMO_LABELS = [
 export default function LifeGroups() {
   const { data } = useAppData()
   const { lifeGroups, lifeGroupHeadcountKpi, totalLifeGroups } = data
-  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries } = usePeriodMode()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries, noDataYet } = usePeriodMode()
   const [filter, setFilter] = useState('All')
   const districts = ['All', ...new Set(lifeGroups.map((g) => g.district))]
   const filtered = filter === 'All' ? lifeGroups : lifeGroups.filter((g) => g.district === filter)
@@ -92,6 +92,12 @@ export default function LifeGroups() {
         </div>
       )}
 
+      {isHistorical && noDataYet ? (
+        <div className="card" style={{ marginBottom: 20, textAlign: 'center', padding: 32 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>No data yet</div>
+          <div className="body-muted">Nothing has been reported for this period yet — figures will appear here as the church year happens.</div>
+        </div>
+      ) : (
       <div className="two-col-reverse">
         <div className="card">
           <div style={{ display: 'flex' }}>
@@ -118,6 +124,7 @@ export default function LifeGroups() {
           <TrendChart points={headcountKpi.trend} color="var(--accent)" />
         </div>
       </div>
+      )}
 
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>By Church — Achievement Ranking</h2>
@@ -151,6 +158,7 @@ export default function LifeGroups() {
       )}
 
       {isHistorical ? (
+        !noDataYet &&
         historicalAreaRows &&
         historicalAreaRows.length > 0 && (
           <div className="card" style={{ marginTop: 24, padding: 8, overflowX: 'auto' }}>
