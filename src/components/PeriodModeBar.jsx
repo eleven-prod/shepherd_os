@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { usePeriod } from '../context/PeriodContext'
+import { isFullyUnreported } from '../data/periods'
 import ModeToggle from './ModeToggle'
 import PeriodSelector from './PeriodSelector'
 
@@ -22,6 +23,10 @@ const ADMIN_ROLES = ['admin', 'pastor_mis']
  *    Historical mode — screens gate their data-swap on this
  *  - metrics/loading/error/selected: passed straight through from
  *    usePeriod() so a screen doesn't need to call it separately too
+ *  - noDataYet: true when the selected period (e.g. a new church year
+ *    that just started) has nothing reported for ANY of its months —
+ *    screens should show a clean "no data yet" state instead of
+ *    swapping in metrics that would just be zeros
  */
 export function usePeriodMode() {
   const { role } = useAuth()
@@ -29,6 +34,7 @@ export function usePeriodMode() {
   const [mode, setMode] = useState('Current')
   const isHistorical = isAdmin && mode === 'Historical'
   const { metrics, loading, error, refetch, selected, monthlySeries } = usePeriod()
+  const noDataYet = isHistorical && !!selected && isFullyUnreported(selected.months)
 
   const bar = isAdmin ? (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -36,11 +42,13 @@ export function usePeriodMode() {
       {mode === 'Historical' && <PeriodSelector />}
       {mode === 'Historical' && (
         <span className="caption" style={{ flexBasis: '100%' }}>
-          Showing real figures for {selected?.label} from the original POR data — not live Data Entry numbers.
+          {noDataYet
+            ? `Nothing reported for ${selected?.label} yet.`
+            : `Showing real figures for ${selected?.label} from the original POR data — not live Data Entry numbers.`}
         </span>
       )}
     </div>
   ) : null
 
-  return { bar, isHistorical, metrics, loading, error, refetch, selected, monthlySeries }
+  return { bar, isHistorical, metrics, loading, error, refetch, selected, monthlySeries, noDataYet }
 }
