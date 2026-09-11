@@ -4,7 +4,7 @@ import PeriodSelector from '../components/PeriodSelector'
 import PyaBarChart from '../components/PyaBarChart'
 import { usePeriod } from '../context/PeriodContext'
 import { peso, commas } from '../data/api'
-import { UNREPORTED_MONTHS } from '../data/periods'
+import { UNREPORTED_MONTHS, isFullyUnreported } from '../data/periods'
 
 export default function Reports() {
   const { selected, metrics, loading, error, refetch, monthlySeries, monthlySeriesLoading } = usePeriod()
@@ -63,6 +63,11 @@ export default function Reports() {
           >
             Try again
           </button>
+        </div>
+      ) : selected && isFullyUnreported(selected.months) ? (
+        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>No data yet</div>
+          <div className="body-muted">Nothing has been reported for {selected.label} yet — figures will appear here as the church year happens.</div>
         </div>
       ) : (
         metrics && (
