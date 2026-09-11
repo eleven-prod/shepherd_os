@@ -16,8 +16,10 @@ import { usePeriodMode } from '../components/PeriodModeBar'
 
 export default function PeopleGrowth() {
   const { data } = useAppData()
+  // Full-year "Trends" section (below) always follows whatever period is
+  // selected — pulled straight from usePeriod(), same as Reports.
   const { monthlySeries, monthlySeriesLoading, monthlySeriesError, refetchMonthlySeries } = usePeriod()
-  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, noDataYet } = usePeriodMode()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, chartSeries, noDataYet } = usePeriodMode()
   const [trendArea, setTrendArea] = useState(null)
   const {
     totalMembers: liveTotalMembers,
@@ -141,12 +143,12 @@ export default function PeopleGrowth() {
             parentLabel="Category 1 ( WSAM+LGAM+ WSAM/LGAM)"
             parentActual={totalMembers}
             parentPya={totalMembersPyaValue}
-            parentMonths={monthlySeries?.total?.membership?.months}
+            parentMonths={chartSeries?.total?.membership?.months}
             parentDemographics={cat1Demographics}
             subsetLabel="Category 2 ( WSAM+ WSAM/LGAM)"
             subsetActual={activeMembers}
             subsetPya={activeMembersPyaValue}
-            subsetMonths={monthlySeries?.total?.activeMembership?.months}
+            subsetMonths={chartSeries?.total?.activeMembership?.months}
             subsetDemographics={cat2Demographics}
             rateLabel="Rate"
             formatter={commas}
@@ -196,7 +198,7 @@ export default function PeopleGrowth() {
           Monthly Trend — Category 2 (background) vs Attendance (Target Passed / Target Missed)
         </div>
         <OverlappingTargetBarChart
-          months={(monthlySeries?.total?.attendance?.months || []).map((m) => ({
+          months={(chartSeries?.total?.attendance?.months || []).map((m) => ({
             label: m.label,
             front: m.unreported ? null : m.value,
             // Category 2's background bar uses the LIVE, Admin-editable
@@ -209,12 +211,12 @@ export default function PeopleGrowth() {
           backgroundKey="background"
           backgroundLabel="Category 2"
           target={(activeMembers || 0) * 0.6}
-          pyaValue={monthlySeries?.total?.attendance?.pya || 0}
+          pyaValue={chartSeries?.total?.attendance?.pya || 0}
           pyaBarLabel="WSA PYA"
           valueFormatter={(v) => commas(Math.round(v))}
         />
         <div className="caption" style={{ marginTop: 8 }}>
-          The blue bar is Attendance's own real PYA ({commas(Math.round(monthlySeries?.total?.attendance?.pya || 0))}) — a different number from the pass/fail Target ({commas(Math.round(activeMembers * 0.6))}), which is set at 60% of Category 2's current Actual ({commas(activeMembers)}).
+          The blue bar is Attendance's own real PYA ({commas(Math.round(chartSeries?.total?.attendance?.pya || 0))}) — a different number from the pass/fail Target ({commas(Math.round(activeMembers * 0.6))}), which is set at 60% of Category 2's current Actual ({commas(activeMembers)}).
         </div>
       </SectionBlock>
 
@@ -228,13 +230,13 @@ export default function PeopleGrowth() {
           <PyaGrowth pya={firstTimersKpi.target} actual={firstTimersKpi.actual} formatter={commas} />
         </div>
 
-        {monthlySeries?.total?.firstTimers?.months && (
+        {chartSeries?.total?.firstTimers?.months && (
           <div style={{ marginBottom: 18 }}>
             <div className="label" style={{ marginBottom: 6 }}>
               Monthly Trend
             </div>
             <TrendChart
-              points={monthlySeries.total.firstTimers.months.map((m) => ({
+              points={chartSeries.total.firstTimers.months.map((m) => ({
                 label: m.label,
                 value: m.unreported ? null : m.value,
               }))}
