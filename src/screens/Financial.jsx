@@ -12,7 +12,7 @@ import { usePeriodMode } from '../components/PeriodModeBar'
 export default function Financial() {
   const { data } = useAppData()
   const { financialKpi: liveKpi, numberOfTithersKpi: liveNumberOfTithersKpi, financialCategories, areaFinancialStats: liveAreaFinancialStats, activeMembers } = data
-  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries } = usePeriodMode()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries, noDataYet } = usePeriodMode()
 
   // In Historical mode, swap the live "This Month" figures (from the
   // kpis table, kept current by Data Entry) for the selected past
@@ -78,6 +78,15 @@ export default function Financial() {
         </div>
       )}
 
+      {isHistorical && !metricsLoading && !metricsError && noDataYet && (
+        <div className="card" style={{ textAlign: 'center', padding: 32 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>No data yet</div>
+          <div className="body-muted">Nothing has been reported for this period yet — figures will appear here as the church year happens.</div>
+        </div>
+      )}
+
+      {!(isHistorical && noDataYet) && (
+      <>
       <div className="card">
         <div style={{ display: 'flex', gap: 20, alignItems: 'stretch', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 220, border: '1px solid var(--line)', borderRadius: 10, padding: '16px 20px' }}>
@@ -163,6 +172,8 @@ export default function Financial() {
           </div>
         </div>
       )}
+      </>
+      )}
 
       <div className="card" style={{ marginTop: 20 }}>
         <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>By Category</h2>
@@ -194,7 +205,7 @@ export default function Financial() {
         </div>
       </div>
 
-      {areaFinancialStats && areaFinancialStats.length > 0 && (
+      {!(isHistorical && noDataYet) && areaFinancialStats && areaFinancialStats.length > 0 && (
         <div className="card" style={{ marginTop: 20, padding: 8, overflowX: 'auto' }}>
           <div style={{ padding: '12px 12px 4px' }}>
             <h2 style={{ fontSize: 15, fontWeight: 700 }}>By Area</h2>
