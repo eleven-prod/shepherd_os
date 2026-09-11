@@ -2,7 +2,7 @@ import { CalendarIcon } from './Icons'
 import { useState } from 'react'
 import { usePeriod } from '../context/PeriodContext'
 import { optionsFor } from '../data/periods'
-import Spinner from './Spinner'
+import PercentLoader from './PercentLoader'
 
 /** Top-right date range control. Changes are staged locally and only take
  * effect (triggering a real data fetch) when Apply is clicked — Cancel
@@ -60,8 +60,19 @@ export default function PeriodSelector() {
           cursor: 'pointer',
         }}
       >
-        <span style={{ fontSize: 14, display: 'flex' }}>{loading ? <Spinner size={14} color="var(--primary)" /> : <CalendarIcon size={14} />}</span>
-        {selected?.label}
+        {loading ? (
+          // No countable sub-steps for a single period fetch, so this is
+          // a simulated percent — it eases toward 90% while the request
+          // is in flight and completes to 100% the instant it resolves.
+          <PercentLoader active width={64} height={5} />
+        ) : (
+          <>
+            <span style={{ fontSize: 14, display: 'flex' }}>
+              <CalendarIcon size={14} />
+            </span>
+            {selected?.label}
+          </>
+        )}
         <span style={{ fontSize: 9, color: 'var(--ink-faint)' }}>{open ? '▲' : '▼'}</span>
       </button>
 
