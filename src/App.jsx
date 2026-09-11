@@ -7,6 +7,7 @@ import { PeriodProvider } from './context/PeriodContext'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
 import NotificationBell from './components/NotificationBell'
+import SyncButton from './components/SyncButton'
 import { SignOutIcon } from './components/Icons'
 import Login from './screens/Login'
 import PendingApproval from './screens/PendingApproval'
@@ -102,6 +103,12 @@ function AppShell() {
           the sidebar. */}
       <div style={{ flex: 1, minWidth: 0, width: 0, maxWidth: '100vw', overflowX: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, padding: mobile ? '12px 16px 0' : '16px 24px 0' }}>
+          {/* Manual refresh — re-runs the same fetch that already keeps
+              data current in the background (see DataContext), so it
+              never reloads the page or bounces anyone off the screen
+              they're on. Lives here, at the top of every screen, rather
+              than on each screen individually. */}
+          <SyncButton onSync={refetch} title="Refresh data" />
           {mobile && (
             // Sign Out normally lives in the sidebar, which is hidden on
             // mobile entirely — without this, mobile users would have no
