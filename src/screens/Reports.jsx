@@ -1,5 +1,6 @@
 import SectionHeader from '../components/SectionHeader'
 import { LoadingSpinner } from '../components/Spinner'
+import PercentLoader from '../components/PercentLoader'
 import PeriodSelector from '../components/PeriodSelector'
 import PyaBarChart from '../components/PyaBarChart'
 import { usePeriod } from '../context/PeriodContext'
@@ -40,9 +41,12 @@ export default function Reports() {
         </div>
       </div>
 
-      {loading ? (
+      {loading && !metrics ? (
+        // Nothing on screen yet (the very first load) — a full-page
+        // spinner is fine here since there's no existing content to
+        // preserve.
         <LoadingSpinner label="Loading real figures for this period..." />
-      ) : error ? (
+      ) : error && !metrics ? (
         <div className="card" style={{ textAlign: 'center', padding: 24 }}>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Couldn't load this period</div>
           <div className="body-muted" style={{ marginBottom: 14 }}>
@@ -72,6 +76,28 @@ export default function Reports() {
       ) : (
         metrics && (
           <>
+            {/* A period switch (or any background refetch) keeps the
+                previous period's figures on screen — metrics only ever
+                swaps once the new numbers actually arrive — and just
+                surfaces this small inline indicator instead of blanking
+                the whole screen out and rebuilding it from a spinner. */}
+            {loading && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <PercentLoader active width={90} height={5} />
+                <span className="body-muted">Updating figures for this period...</span>
+              </div>
+            )}
+            {error && (
+              <div className="caption" style={{ marginBottom: 16, color: 'var(--status-critical)' }}>
+                Couldn't refresh: {error}{' '}
+                <button
+                  onClick={refetch}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                >
+                  Try again
+                </button>
+              </div>
+            )}
             <ReportSection title="Attendance & Membership">
               <MetricRow
                 label="Average Weekly Attendance"
