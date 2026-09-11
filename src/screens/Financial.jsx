@@ -13,7 +13,7 @@ import { usePeriodMode } from '../components/PeriodModeBar'
 export default function Financial() {
   const { data } = useAppData()
   const { financialKpi: liveKpi, numberOfTithersKpi: liveNumberOfTithersKpi, financialCategories, areaFinancialStats: liveAreaFinancialStats, activeMembers } = data
-  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries, noDataYet } = usePeriodMode()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, chartSeries: monthlySeries, noDataYet } = usePeriodMode()
 
   // In Historical mode, swap the live "This Month" figures (from the
   // kpis table, kept current by Data Entry) for the selected past
