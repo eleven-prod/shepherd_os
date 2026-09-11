@@ -33,8 +33,13 @@ export function usePeriodMode() {
   const isAdmin = ADMIN_ROLES.includes(role)
   const [mode, setMode] = useState('Current')
   const isHistorical = isAdmin && mode === 'Historical'
-  const { metrics, loading, error, refetch, selected, monthlySeries } = usePeriod()
+  const { metrics, loading, error, refetch, selected, monthlySeries, liveMonthlySeries } = usePeriod()
   const noDataYet = isHistorical && !!selected && isFullyUnreported(selected.months)
+  // The trend charts shown alongside "This Month" should follow the
+  // same swap as everything else here: the live, current-fiscal-year
+  // series normally, or the selected past period's own series once
+  // Historical mode is on — never a mix of the two.
+  const chartSeries = isHistorical ? monthlySeries : liveMonthlySeries
 
   const bar = isAdmin ? (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -50,5 +55,5 @@ export function usePeriodMode() {
     </div>
   ) : null
 
-  return { bar, isHistorical, metrics, loading, error, refetch, selected, monthlySeries, noDataYet }
+  return { bar, isHistorical, metrics, loading, error, refetch, selected, monthlySeries, chartSeries, noDataYet }
 }
