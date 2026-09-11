@@ -16,7 +16,7 @@ import { usePeriodMode } from '../components/PeriodModeBar'
 export default function PeopleGrowth() {
   const { data } = useAppData()
   const { monthlySeries, monthlySeriesLoading, monthlySeriesError, refetchMonthlySeries } = usePeriod()
-  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = usePeriodMode()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, noDataYet } = usePeriodMode()
   const [trendArea, setTrendArea] = useState(null)
   const {
     totalMembers: liveTotalMembers,
@@ -116,6 +116,15 @@ export default function PeopleGrowth() {
         </div>
       )}
 
+      {isHistorical && noDataYet && (
+        <div className="card" style={{ textAlign: 'center', padding: 32, marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>No data yet</div>
+          <div className="body-muted">Nothing has been reported for this period yet — figures will appear here as the church year happens.</div>
+        </div>
+      )}
+
+      {!(isHistorical && noDataYet) && (
+      <>
       {/* --- Category 1 / Category 2 / Rate --- */}
       <SectionBlock title="Membership" subtitle="Category 2 is a subset of Category 1 — PYA is each category's own benchmark, not a third category">
         <div className="two-col">
@@ -248,6 +257,8 @@ export default function PeopleGrowth() {
           ))}
         </div>
       </SectionBlock>
+      </>
+      )}
 
       {/* --- Workers --- */}
       <SectionBlock title="Workers" subtitle="Summed across all areas — edit per-area figures in Admin Console → Area People">
@@ -322,7 +333,7 @@ export default function PeopleGrowth() {
       </div>
 
       {/* --- By Area (unchanged) --- */}
-      {areaPeopleStats && areaPeopleStats.length > 0 && (
+      {!(isHistorical && noDataYet) && areaPeopleStats && areaPeopleStats.length > 0 && (
         <div className="card" style={{ marginTop: 8, padding: 8, overflowX: 'auto' }}>
           <div style={{ padding: '12px 12px 4px' }}>
             <h2 style={{ fontSize: 15, fontWeight: 700 }}>By Area</h2>
