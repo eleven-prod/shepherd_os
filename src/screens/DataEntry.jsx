@@ -2,6 +2,7 @@ import { LockIcon } from '../components/Icons'
 import { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import SectionHeader from '../components/SectionHeader'
 import { sheetInputStyle } from '../components/FormSheet'
+import PercentLoader from '../components/PercentLoader'
 import { useAppData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import { fetchWeeklyEntries, upsertWeeklyEntry, recomputeMonthlyActual, fetchRecentSubmissions, subscribeToRecentSubmissions } from '../data/api'
@@ -165,11 +166,13 @@ export default function DataEntry() {
   const churchRefs = useRef({})
   const lgRefs = useRef({})
   const [submitting, setSubmitting] = useState(false)
+  const [submitProgress, setSubmitProgress] = useState(0)
   const [submitFlash, setSubmitFlash] = useState(false)
   const [submitError, setSubmitError] = useState(null)
 
   async function handleSubmitAll() {
     setSubmitting(true)
+    setSubmitProgress(0)
     setSubmitError(null)
     try {
       const saves = []
@@ -179,15 +182,29 @@ export default function DataEntry() {
         if (churchRef) saves.push(churchRef.save())
         if (lgRef) saves.push(lgRef.save())
       }
+      // Real, countable progress — each card's own save() is one
+      // independent promise, so the percent reflects how many of them
+      // have actually resolved rather than a simulated guess.
+      const total = saves.length
+      let completed = 0
       // Each card's own handleSave already calls onSaved (bumpActivity)
       // on its own success — no need to bump again here.
-      await Promise.all(saves)
+      await Promise.all(
+        saves.map((p) =>
+          p.then((result) => {
+            completed += 1
+            setSubmitProgress(total > 0 ? Math.round((completed / total) * 100) : 100)
+            return result
+          })
+        )
+      )
       setSubmitFlash(true)
       setTimeout(() => setSubmitFlash(false), 2000)
     } catch (err) {
       setSubmitError(err.message || 'Something went wrong saving one of the areas above.')
     } finally {
       setSubmitting(false)
+      setSubmitProgress(0)
     }
   }
 
@@ -277,6 +294,11 @@ export default function DataEntry() {
               one stacked column) Submit lands right after the cards it
               saves instead of below Recent Submissions. */}
           {submitError && <div style={{ color: 'var(--status-critical)', fontSize: 13 }}>{submitError}</div>}
+          {submitting && (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <PercentLoader progress={submitProgress} width={180} />
+            </div>
+          )}
           <button
             onClick={handleSubmitAll}
             disabled={submitting}
@@ -292,7 +314,7 @@ export default function DataEntry() {
               opacity: submitting ? 0.7 : 1,
             }}
           >
-            {submitting ? 'Saving...' : submitFlash ? 'Saved ✓' : 'Submit'}
+            {submitting ? `Saving... ${submitProgress}%` : submitFlash ? 'Saved ✓' : 'Submit'}
           </button>
         </div>
         <RecentSubmissions refreshKey={activityVersion} />
