@@ -20,7 +20,7 @@ const DEMO_LABELS = [
 export default function LifeGroups() {
   const { data } = useAppData()
   const { lifeGroups, lifeGroupHeadcountKpi, totalLifeGroups } = data
-  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, monthlySeries, noDataYet } = usePeriodMode()
+  const { bar: periodBar, isHistorical, metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics, chartSeries: monthlySeries, noDataYet } = usePeriodMode()
   const [filter, setFilter] = useState('All')
   const districts = ['All', ...new Set(lifeGroups.map((g) => g.district))]
   const filtered = filter === 'All' ? lifeGroups : lifeGroups.filter((g) => g.district === filter)
