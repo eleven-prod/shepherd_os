@@ -359,25 +359,35 @@ async function fetchStockNow() {
  * Fetches the full 12-month raw series (Sep–Aug, unaggregated) plus PYA
  * for each tracked metric, for the church-wide TOTAL area AND each real
  * operational area — used for the "PYA + monthly trend" bar charts on
- * Reports and Membership. Returns { total: {...}, byArea: [...] }, same
- * shape as fetchPeriodMetrics.
+ * Reports, Financial, Life Groups and Membership. Returns
+ * { total: {...}, byArea: [...] }, same shape as fetchPeriodMetrics.
  *
- * Once the current fiscal year has begun (see CURRENT_FISCAL_YEAR_START),
- * this switches to fetchCurrentFiscalYearSeries — a live read of Data
- * Entry's weekly_entries for the months that have actually happened so
- * far this year, with the closed FY2025-26 year's real totals carried
- * over as the flat PYA reference line — instead of the frozen POR
- * import, which has no rows at all past August 2026 and never will.
+ * `selectedMonths` is whatever period is currently selected (Reports'
+ * own period, or Historical mode's, on the screens that have it) — it
+ * decides WHICH fiscal year's trend to return, the same way
+ * fetchPeriodMetrics already picks its numbers based on the selection.
+ * A selection anywhere in the still-open current fiscal year (see
+ * CURRENT_FISCAL_YEAR_START) gets fetchCurrentFiscalYearSeries — a live
+ * read of Data Entry's weekly_entries for the months that have actually
+ * happened so far, with the closed FY2025-26 year's real totals carried
+ * over as the flat PYA reference line. A selection in a closed year
+ * (FY2025-26 today) gets that year's frozen POR import instead, which
+ * has no rows at all past August 2026 and never will. Without
+ * `selectedMonths` (e.g. a caller that hasn't picked a period yet),
+ * this defaults to whichever fiscal year today falls in.
  */
-export async function fetchMonthlySeries() {
+export async function fetchMonthlySeries(selectedMonths) {
   if (!supabase) {
     throw new Error('Supabase is not configured yet — see .env.example.')
   }
 
-  const monthsSoFar = monthsSoFarInCurrentFiscalYear()
-  if (monthsSoFar.length > 0) {
-    const stockNow = await fetchStockNow()
-    return fetchCurrentFiscalYearSeries(monthsSoFar, stockNow)
+  const wantsCurrentFY = selectedMonths ? selectedMonths.some((m) => m >= CURRENT_FISCAL_YEAR_START) : true
+  if (wantsCurrentFY) {
+    const monthsSoFar = monthsSoFarInCurrentFiscalYear()
+    if (monthsSoFar.length > 0) {
+      const stockNow = await fetchStockNow()
+      return fetchCurrentFiscalYearSeries(monthsSoFar, stockNow)
+    }
   }
 
   const { data: areaRows, error: areaErr } = await supabase.from('por_areas').select('id, name, barangay_name, is_extension_church')
