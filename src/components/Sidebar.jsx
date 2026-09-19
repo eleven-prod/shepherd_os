@@ -7,15 +7,18 @@ const SIDEBAR_LINE = 'rgba(255,255,255,0.1)'
 const SIDEBAR_TEXT_MUTED = '#97a6c4' // light blue-gray, readable against dark navy
 const SIDEBAR_ACTIVE_BG = 'rgba(60,118,241,0.25)' // Primary blue, translucent
 
+// KPI Center absorbed the old separate Attention screen (see
+// KpiCenter.jsx, which now shows both — each section gated on its own
+// resource) — so this link is reachable if the person can view EITHER
+// resource, via `resources` instead of a single `resource`.
 const NAV_ITEMS = [
   { to: '/', label: 'Overview', icon: '▦', end: true, resource: null }, // always shown to any assigned role
   { to: '/people', label: 'Membership', icon: '◔', resource: 'membership' },
   { to: '/life-groups', label: 'Life Groups', icon: '◈', resource: 'life_groups' },
   { to: '/outreach', label: 'Outreach', icon: '⬡', resource: 'outreach' },
   { to: '/financial', label: 'Financial', icon: '$', resource: 'financial' },
-  { to: '/kpi-center', label: 'KPI Center', icon: '◎', resource: 'kpis' },
+  { to: '/kpi-center', label: 'KPI Center', icon: '◎', resources: ['kpis', 'attention'] },
   { to: '/reports', label: 'Reports', icon: '▤', resource: 'reports' },
-  { to: '/attention', label: 'Attention', icon: '!', resource: 'attention' },
   { to: '/data-entry', label: 'Data Entry', icon: '✎', resource: 'data_entry' },
 ]
 
@@ -32,7 +35,7 @@ const RESOURCES = ['membership', 'life_groups', 'outreach', 'financial', 'attent
 
 export default function Sidebar({ collapsed }) {
   const { profile, role, permissions, canView, canEdit, signOut } = useAuth()
-  const items = NAV_ITEMS.filter((item) => item.resource === null || canView(item.resource))
+  const items = NAV_ITEMS.filter((item) => item.resource === null || (item.resources ? item.resources.some((r) => canView(r)) : canView(item.resource)))
   // Admin Console is relevant to anyone with edit rights on at least one
   // resource, not just the two admin roles — Finance, Church Management
   // Team, etc. all need to reach it to actually use their edit access,
