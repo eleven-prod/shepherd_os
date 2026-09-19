@@ -2,7 +2,6 @@ import { useState } from 'react'
 import SectionHeader from '../components/SectionHeader'
 import KpiStatCard from '../components/KpiStatCard'
 import BarangayMap from '../components/BarangayMap'
-import AttentionTile from '../components/AttentionTile'
 import StatusBadge from '../components/StatusBadge'
 import TrendChart from '../components/TrendChart'
 import AchievementBar from '../components/AchievementBar'
@@ -29,7 +28,6 @@ export default function Dashboard() {
     barangays,
     barangaysReached,
     totalBarangays,
-    attentionItems,
     lifeGroups,
     totalLifeGroups,
     totalMembers,
@@ -46,26 +44,12 @@ export default function Dashboard() {
     <div className="scroll-page">
       <SectionHeader title="Main Overview" subtitle="See the church. Measure the mission. Manage the ministry." />
 
-      {/* --- Reach (map) + Immediate Attention --- */}
-      <div className="two-col" style={{ marginBottom: 20 }}>
-        <div className="card">
-          <BarangayMap barangays={barangays} selectedName={selected?.name} onSelect={setSelected} />
-        </div>
-
-        <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: 'var(--accent)' }}>⚑</span>
-            <h2 style={{ fontSize: 15, fontWeight: 700 }}>Needs Attention</h2>
-          </div>
-          <div className="body-muted" style={{ marginTop: 4, marginBottom: 14 }}>
-            Don&apos;t search for problems — see them.
-          </div>
-          <div className="attention-grid" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {attentionItems.slice(0, 4).map((item) => (
-              <AttentionTile key={item.id ?? item.title} item={item} />
-            ))}
-          </div>
-        </div>
+      {/* --- Reach (map) --- */}
+      {/* "Needs Attention" used to sit beside this map as a preview —
+          removed since KPI Center now has a full Attention section
+          (see KpiCenter.jsx), so this was just a duplicate. */}
+      <div className="card" style={{ marginBottom: 20 }}>
+        <BarangayMap barangays={barangays} selectedName={selected?.name} onSelect={setSelected} />
       </div>
 
       <div className="kpi-row" style={{ marginBottom: 28 }}>
