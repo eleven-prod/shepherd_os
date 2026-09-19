@@ -18,7 +18,6 @@ import GeographicReach from './screens/GeographicReach'
 import Financial from './screens/Financial'
 import KpiCenter from './screens/KpiCenter'
 import Reports from './screens/Reports'
-import ManagementAttention from './screens/ManagementAttention'
 import Admin from './screens/Admin'
 import DataEntry from './screens/DataEntry'
 
@@ -147,7 +146,9 @@ function AppShell() {
             <Route path="/financial" element={<Financial />} />
             <Route path="/kpi-center" element={<KpiCenter />} />
             <Route path="/reports" element={<Reports />} />
-            <Route path="/attention" element={<ManagementAttention />} />
+            {/* Management Attention was merged into KPI Center — this
+                keeps any old bookmarks/links working instead of 404ing. */}
+            <Route path="/attention" element={<Navigate to="/kpi-center" replace />} />
             <Route path="/data-entry" element={canAccessDataEntry ? <DataEntry /> : <Navigate to="/" replace />} />
             <Route path="/admin" element={canAccessAdmin ? <Admin /> : <Navigate to="/" replace />} />
           </Routes>
@@ -164,15 +165,17 @@ function AppShell() {
 // ignored permissions entirely, meaning Financial, KPI Center, Reports,
 // Data Entry, and Admin Console were unreachable on mobile regardless
 // of role.
+// KPI Center now covers what the old separate Attention screen did too
+// (see KpiCenter.jsx) — it's reachable if the person can view EITHER
+// resource, since each section inside gates itself independently.
 const MOBILE_NAV_ITEMS = [
   { to: '/', label: 'Overview', icon: '▦', resource: null },
   { to: '/people', label: 'Membership', icon: '◔', resource: 'membership' },
   { to: '/life-groups', label: 'Life Groups', icon: '◈', resource: 'life_groups' },
   { to: '/outreach', label: 'Outreach', icon: '⬡', resource: 'outreach' },
   { to: '/financial', label: 'Financial', icon: '$', resource: 'financial' },
-  { to: '/kpi-center', label: 'KPI Center', icon: '◎', resource: 'kpis' },
+  { to: '/kpi-center', label: 'KPI Center', icon: '◎', resources: ['kpis', 'attention'] },
   { to: '/reports', label: 'Reports', icon: '▤', resource: 'reports' },
-  { to: '/attention', label: 'Attention', icon: '!', resource: 'attention' },
   { to: '/data-entry', label: 'Data Entry', icon: '✎', resource: 'data_entry' },
   { to: '/admin', label: 'Admin Console', icon: '⚙', resource: 'admin' },
 ]
@@ -186,6 +189,7 @@ function MobileNav() {
   const items = MOBILE_NAV_ITEMS.filter((item) => {
     if (item.resource === null) return true
     if (item.to === '/admin') return RESOURCES.some((r) => canEdit(r))
+    if (item.resources) return item.resources.some((r) => canView(r))
     return canView(item.resource)
   })
 
